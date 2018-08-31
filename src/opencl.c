@@ -424,7 +424,6 @@ char* concat(const char *s1, const char *s2)
 
 void opencl_load_buffer(const char *buffer, const size_t size, cl_program *output)
 {
-#ifdef RPI
     cl_int clErr;
 
     *output = clCreateProgramWithSource(opencl_context, CL_TRUE,
@@ -456,94 +455,6 @@ void opencl_load_buffer(const char *buffer, const size_t size, cl_program *outpu
         free(ebuffer);
         exit(1);
     }
-#else
-    cl_int clErr;
-
-    cl_program prhd = 0;
-
-    const char * code_header = "#ifndef FP_16_H\n"
-                               "#define FP_16_H\n"
-                               "#if defined(cl_khr_fp64)\n"
-                               "#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n"
-                               "#define DOUBLE_SUPPORT_AVAILABLE\n"
-                               "#elif defined(cl_amd_fp64)\n"
-                               "#pragma OPENCL EXTENSION cl_amd_fp64 : enable\n"
-                               "#define DOUBLE_SUPPORT_AVAILABLE\n"
-                               "#endif\n"
-                               "#if defined(DOUBLE_SUPPORT_AVAILABLE)\n"
-                               "#endif\n"
-                               "#endif\n";
-
-    size_t headsz = strlen(code_header);
-
-    prhd = clCreateProgramWithSource(opencl_context, CL_TRUE,
-                                        (const char**)&code_header, &headsz, &clErr);
-
-    if (clErr != CL_SUCCESS)
-    {
-        printf("opencl_load: could not create header. error: %s\n", clCheckError(clErr));
-        return;
-    }
-
-    cl_program prog[1];
-
-    char *buffer_with_header = concat(code_header, buffer);
-
-    size_t size_with_header = strlen(buffer_with_header);
-
-    prog[0] = clCreateProgramWithSource(opencl_context, CL_TRUE,
-                                        (const char**)&buffer_with_header, &size_with_header, &clErr);
-
-    if (clErr != CL_SUCCESS)
-    {
-        printf("opencl_load: could not create program. error: %s\n", clCheckError(clErr));
-        return;
-    }
-
-    cl_program input_headers[1] = { prhd };
-    const char * input_header_names[1] = { "prhd" };
-
-    clErr = clCompileProgram(
-            prog[0],
-            opencl_device_ct_t,
-            opencl_devices,
-            "-cl-denorms-are-zero "
-            "-cl-fp32-correctly-rounded-divide-sqrt "
-            "-cl-std=CL1.2 "
-            "-Werror "
-            "",
-            1, input_headers, input_header_names,
-            NULL, NULL);
-
-    if (clErr != CL_SUCCESS)
-    {
-        printf("opencl_load: could not compile. error: %s\n", clCheckError(clErr));
-        size_t len;
-        char *buffer = (char*)calloc(0x10000000, sizeof(char));
-        clGetProgramBuildInfo(prog[0], opencl_devices[opencl_device_id_t], CL_PROGRAM_BUILD_LOG, 0x10000000 * sizeof(char), buffer, &len);
-        printf("CL_PROGRAM_BUILD_LOG:\n%s\n", buffer);
-        printf("CODE:\n%s\n", buffer_with_header);
-        free(buffer);
-    }
-
-    free(buffer_with_header);
-
-    *output =
-            clLinkProgram(opencl_context, opencl_device_ct_t, opencl_devices,
-                    "-cl-denorms-are-zero "
-                    "-cl-kernel-arg-info "
-                    "", 1, prog, NULL, NULL, &clErr);
-
-    if (clErr != CL_SUCCESS)
-    {
-        printf("opencl_load: could not link. error: %s\n", clCheckError(clErr));
-        size_t len;
-        char *buffer = (char*)calloc(0x10000000, sizeof(char));
-        clGetProgramBuildInfo(*output, opencl_devices[opencl_device_id_t], CL_PROGRAM_BUILD_LOG, 0x10000000 * sizeof(char), buffer, &len);
-        printf("CL_PROGRAM_BUILD_LOG:\n%s\n", buffer);
-        free(buffer);
-    }
-#endif
 }
 
 void opencl_create_kernel(cl_program *program, const char *kernelName,
