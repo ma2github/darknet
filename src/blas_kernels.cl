@@ -445,7 +445,7 @@ __kernel void normalize_kernel(int N, __global float *x, __global float *mean, _
     int i = (id % spatial);
 
     int index = b*filters*spatial + f*spatial + i;
-    x[index] = (x[index] - mean[f])/(sqrt(variance[f] + .000001f));
+    x[index] = (x[index] - mean[f])/(sqrt(variance[f] + .00001f));
 }
 
 

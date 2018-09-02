@@ -54,9 +54,9 @@ ifeq ($(DEBUG), 1)
 OPTS=-O0 -g
 else
 ifeq ($(RPI), 1)
-OPTS=-O2
+OPTS=-O0
 else
-OPTS=-O2 -mfpmath=sse
+OPTS=-O0
 endif
 endif
 
