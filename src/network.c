@@ -406,40 +406,35 @@ int resize_network(network *net, int w, int h)
     if(net->layers[net->n-1].truths) net->truths = net->layers[net->n-1].truths;
 #ifdef GPU
     if (gpu_index >= 0) {
-        //opencl_free_gpu_only(net->output_gpu);
         opencl_free_gpu_only(net->input_gpu);
         opencl_free_gpu_only(net->truth_gpu);
         opencl_free_gpu_only(net->delta_gpu);
     }
 #endif
-    //free(net->output);
     free(net->input);
     free(net->truth);
+    free(net->delta);
     net->output = out.output;
-    //net->output = calloc(net->outputs*net->batch, sizeof(float));
     net->input = calloc(net->inputs*net->batch, sizeof(float));
     net->truth = calloc(net->truths*net->batch, sizeof(float));
     net->delta = calloc(net->outputs*net->batch, sizeof(float));
 #ifdef GPU
-    if(gpu_index >= 0){
+    if (gpu_index >= 0) {
         net->output_gpu = out.output_gpu;
-        // net->output_gpu = opencl_make_array(net->output, net->outputs * net->batch);
         net->input_gpu = opencl_make_array(net->input, net->inputs * net->batch);
         net->truth_gpu = opencl_make_array(net->truth, net->truths * net->batch);
         net->delta_gpu = opencl_make_array(net->delta, net->outputs * net->batch);
-        if(workspace_size){
-            //printf("%ld\n", workspace_size*sizeof(float));
-            opencl_free(net->workspace_gpu);
-            net->workspace = calloc(workspace_size, sizeof(float));
-            net->workspace_gpu = opencl_make_array(net->workspace, workspace_size);
-        }
-    }else {
+        opencl_free(net->workspace_gpu);
+        net->workspace = calloc(1, workspace_size);
+        net->workspace_gpu = opencl_make_array(net->workspace, (workspace_size-1)/sizeof(float)+1);
+    }
+    else {
         free(net->workspace);
-        net->workspace = calloc(workspace_size, sizeof(float));
+        net->workspace = calloc(1, workspace_size);
     }
 #else
     free(net->workspace);
-    net->workspace = calloc(workspace_size, sizeof(float));
+    net->workspace = calloc(1, workspace_size);
 #endif
     //fprintf(stderr, " Done!\n");
     return 0;
@@ -463,7 +458,7 @@ image get_network_image_layer(network *net, int i)
     layer l = net->layers[i];
 #ifdef GPU
     if (gpu_index >= 0) {
-        //opencl_pull_array(l.output_gpu, l.output, l.outputs);
+        opencl_pull_array(l.output_gpu, l.output, l.outputs);
     }
 #endif
     if (l.out_w && l.out_h && l.out_c){
@@ -507,13 +502,7 @@ void top_predictions(network *net, int k, int *index)
 float *network_predict(network *net, float *input)
 {
     network orig = *net;
-    //net->input = input;
-#ifdef GPU
-    if (gpu_index >= 0) {
-        assert(net->input_gpu.ptr == (void *) net->input);
-    }
-#endif
-    memcpy(net->input, input, net->inputs*net->batch*sizeof(float));
+    net->input = input;
     net->truth = 0;
     net->train = 0;
     net->delta = 0;
@@ -594,11 +583,10 @@ void free_detections(detection *dets, int n)
 
 float *network_predict_image(network *net, image im)
 {
-    int resize = im.w != net->w || im.h != net->h;
-    image imr = resize ? letterbox_image(im, net->w, net->h) : im;
+    image imr = letterbox_image(im, net->w, net->h);
     set_batch_network(net, 1);
     float *p = network_predict(net, imr.data);
-    if(resize) free_image(imr);
+    free_image(imr);
     return p;
 }
 
@@ -737,12 +725,18 @@ void free_network(network *net)
         free_layer(net->layers[i]);
     }
     free(net->layers);
-    if(net->input) free(net->input);
-    if(net->truth) free(net->truth);
+#ifndef GPU
+if (gpu_index == -1) {
+    if (net->input) free(net->input);
+    if (net->truth) free(net->truth);
+    if (net->delta) free(net->delta);
+}
+#endif
 #ifdef GPU
     if (gpu_index >= 0) {
         if (net->input_gpu.mem) opencl_free(net->input_gpu);
         if (net->truth_gpu.mem) opencl_free(net->truth_gpu);
+        if (net->delta_gpu.mem) opencl_free(net->delta_gpu);
         if (net->workspace_gpu.mem) opencl_free(net->workspace_gpu);
     }
     else {
@@ -818,7 +812,7 @@ void forward_network_gpu(network *netp)
             net.truth = l.output;
         }
     }
-    if (!netp->train) pull_network_output(netp);
+    pull_network_output(netp);
     calc_network_cost(netp);
 }
 
@@ -1149,6 +1143,7 @@ void sync_nets(network **nets, int n, int interval)
 
 float train_networks(network **nets, int n, data d, int interval, int* gpus, int ngpus)
 {
+    assert(gpus);
     int i;
     int batch = nets[0]->batch;
     int subdivisions = nets[0]->subdivisions;

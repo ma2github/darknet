@@ -175,6 +175,13 @@ void denormalize_deconvolutional_layer(layer l)
 
 void resize_deconvolutional_layer(layer *l, int h, int w)
 {
+#ifdef GPU
+    if (gpu_index >= 0) {
+        opencl_free_gpu_only(l->delta_gpu);
+        opencl_free_gpu_only(l->output_gpu);
+    }
+#endif
+
     l->h = h;
     l->w = w;
     l->out_h = (l->h - 1) * l->stride + l->size - 2*l->pad;
@@ -192,9 +199,6 @@ void resize_deconvolutional_layer(layer *l, int h, int w)
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free_gpu_only(l->delta_gpu);
-        opencl_free_gpu_only(l->output_gpu);
-
         l->delta_gpu = opencl_make_array(l->delta, l->batch * l->outputs);
         l->output_gpu = opencl_make_array(l->output, l->batch * l->outputs);
 
@@ -202,8 +206,8 @@ void resize_deconvolutional_layer(layer *l, int h, int w)
             opencl_free_gpu_only(l->x_gpu);
             opencl_free_gpu_only(l->x_norm_gpu);
 
-            l->x_gpu = opencl_make_array(l->output, l->batch * l->outputs);
-            l->x_norm_gpu = opencl_make_array(l->output, l->batch * l->outputs);
+            l->x_gpu = opencl_make_array(l->x, l->batch * l->outputs);
+            l->x_norm_gpu = opencl_make_array(l->x_norm, l->batch * l->outputs);
         }
     }
 #endif

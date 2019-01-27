@@ -29,9 +29,9 @@ softmax_layer make_softmax_layer(int batch, int inputs, int groups)
     if (gpu_index >= 0) {
         l.forward_gpu = forward_softmax_layer_gpu;
         l.backward_gpu = backward_softmax_layer_gpu;
-        l.output_gpu = opencl_make_array(l.output, inputs * batch);
-        l.loss_gpu = opencl_make_array(l.loss, inputs * batch);
-        l.delta_gpu = opencl_make_array(l.delta, inputs * batch);
+        l.output_gpu = opencl_make_array(l.output, inputs*batch);
+        l.loss_gpu = opencl_make_array(l.loss, inputs*batch);
+        l.delta_gpu = opencl_make_array(l.delta, inputs*batch);
     }
 #endif
     return l;
@@ -89,13 +89,13 @@ void forward_softmax_layer_gpu(const softmax_layer l, network net)
         }
     }
     if(net.truth && !l.noloss) {
-        softmax_x_ent_gpu(l.batch * l.inputs, l.output_gpu, net.truth_gpu, l.delta_gpu, l.loss_gpu);
+        softmax_x_ent_gpu(l.batch*l.inputs, l.output_gpu, net.truth_gpu, l.delta_gpu, l.loss_gpu);
         if (l.softmax_tree) {
-            mask_gpu(l.batch * l.inputs, l.delta_gpu, SECRET_NUM, net.truth_gpu, 0);
-            mask_gpu(l.batch * l.inputs, l.loss_gpu, SECRET_NUM, net.truth_gpu, 0);
+            mask_gpu(l.batch*l.inputs, l.delta_gpu, SECRET_NUM, net.truth_gpu, 0);
+            mask_gpu(l.batch*l.inputs, l.loss_gpu, SECRET_NUM, net.truth_gpu, 0);
         }
-        opencl_pull_array(l.loss_gpu, l.loss, l.batch * l.inputs);
-        l.cost[0] = sum_array(l.loss, l.batch * l.inputs);
+        opencl_pull_array(l.loss_gpu, l.loss, l.batch*l.inputs);
+        l.cost[0] = sum_array(l.loss, l.batch*l.inputs);
     }
 }
 /*

@@ -11,6 +11,7 @@ float logistic_activate_kernel(float x);
 float loggy_activate_kernel(float x);
 float relu_activate_kernel(float x);
 float elu_activate_kernel(float x);
+float selu_activate_kernel(float x);
 float relie_activate_kernel(float x);
 float ramp_activate_kernel(float x);
 float leaky_activate_kernel(float x);
@@ -23,6 +24,7 @@ float logistic_gradient_kernel(float x);
 float loggy_gradient_kernel(float x);
 float relu_gradient_kernel(float x);
 float elu_gradient_kernel(float x);
+float selu_gradient_kernel(float x);
 float relie_gradient_kernel(float x);
 float ramp_gradient_kernel(float x);
 float leaky_gradient_kernel(float x);
@@ -31,7 +33,7 @@ float plse_gradient_kernel(float x);
 float stair_gradient_kernel(float x);
 
 typedef enum{
-    LOGISTIC, RELU, RELIE, LINEAR, RAMP, TANH, PLSE, LEAKY, ELU, LOGGY, STAIR, HARDTAN, LHTAN
+    LOGISTIC, RELU, RELIE, LINEAR, RAMP, TANH, PLSE, LEAKY, ELU, LOGGY, STAIR, HARDTAN, LHTAN, SELU
 } ACTIVATION;
 
 float activate_kernel(float x, ACTIVATION a);
@@ -60,6 +62,7 @@ float logistic_activate_kernel(float x){return 1.f/(1.f + exp(-x));}
 float loggy_activate_kernel(float x){return 2.f/(1.f + exp(-x)) - 1;}
 float relu_activate_kernel(float x){return x*(x>0);}
 float elu_activate_kernel(float x){return (x >= 0)*x + (x < 0)*(exp(x)-1);}
+float selu_activate_kernel(float x){return (x >= 0)*1.0507f*x + (x < 0)*1.0507f*1.6732f*(exp(x)-1);}
 float relie_activate_kernel(float x){return (x>0) ? x : .01f*x;}
 float ramp_activate_kernel(float x){return x*(x>0)+.1f*x;}
 float leaky_activate_kernel(float x){return (x>0) ? x : .1f*x;}
@@ -92,6 +95,7 @@ float loggy_gradient_kernel(float x)
 }
 float relu_gradient_kernel(float x){return (x>0);}
 float elu_gradient_kernel(float x){return (x >= 0) + (x < 0)*(x + 1);}
+float selu_gradient_kernel(float x){return (x >= 0)*1.0507 + (x < 0)*(x + 1.0507*1.6732);}
 float relie_gradient_kernel(float x){return (x>0) ? 1 : .01f;}
 float ramp_gradient_kernel(float x){return (x>0)+.1f;}
 float leaky_gradient_kernel(float x){return (x>0) ? 1 : .1f;}
@@ -116,6 +120,8 @@ float activate_kernel(float x, ACTIVATION a)
             return relu_activate_kernel(x);
         case ELU:
             return elu_activate_kernel(x);
+        case SELU:
+            return selu_activate_kernel(x);
         case RELIE:
             return relie_activate_kernel(x);
         case RAMP:
@@ -149,6 +155,8 @@ float gradient_kernel(float x, ACTIVATION a)
             return relu_gradient_kernel(x);
         case ELU:
             return elu_gradient_kernel(x);
+        case SELU:
+            return selu_gradient_kernel(x);
         case RELIE:
             return relie_gradient_kernel(x);
         case RAMP:

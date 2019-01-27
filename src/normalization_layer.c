@@ -41,7 +41,12 @@ layer make_normalization_layer(int batch, int w, int h, int c, int size, float a
 void resize_normalization_layer(layer *layer, int w, int h)
 {
 #ifdef GPU
-
+    if (gpu_index >= 0) {
+        opencl_free_gpu_only(layer->output_gpu);
+        opencl_free_gpu_only(layer->delta_gpu);
+        opencl_free_gpu_only(layer->squared_gpu);
+        opencl_free_gpu_only(layer->norms_gpu);
+    }
 #endif
     int c = layer->c;
     int batch = layer->batch;
@@ -57,11 +62,6 @@ void resize_normalization_layer(layer *layer, int w, int h)
     layer->norms = realloc(layer->norms, h * w * c * batch * sizeof(float));
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free_gpu_only(layer->output_gpu);
-        opencl_free_gpu_only(layer->delta_gpu);
-        opencl_free_gpu_only(layer->squared_gpu);
-        opencl_free_gpu_only(layer->norms_gpu);
-
         layer->output_gpu = opencl_make_array(layer->output, h * w * c * batch);
         layer->delta_gpu = opencl_make_array(layer->delta, h * w * c * batch);
         layer->squared_gpu = opencl_make_array(layer->squared, h * w * c * batch);

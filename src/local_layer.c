@@ -53,9 +53,8 @@ local_layer make_local_layer(int batch, int h, int w, int c, int n, int size, in
     l.biases = calloc(l.outputs, sizeof(float));
     l.bias_updates = calloc(l.outputs, sizeof(float));
 
-    //float scale = 1./sqrt(size*size*c);
+    // float scale = 1./sqrt(size*size*c);
     float scale = sqrt(2./(size*size*c));
-    //float scale = 1.0027f;
     for(i = 0; i < c*n*size*size; ++i) l.weights[i] = scale*rand_uniform(-1,1);
 
     l.output = calloc(l.batch*out_h * out_w * n, sizeof(float));
@@ -210,7 +209,7 @@ void forward_local_layer_gpu(const local_layer l, network net)
             int n = 1;
             int k = l.size*l.size*l.c;
             
-            gemm_offset_gpu(0,0,m,n,k,1,a,j*l.size*l.size*l.c,k,b,j,locations,1,c,j,locations);
+            gemm_offset_gpu(0,0,m,n,k,1,a,j*l.size*l.size*l.c*l.n,k,b,j,locations,1,c,i*l.outputs+j,locations);
         }
     }
     activate_array_gpu(l.output_gpu, l.outputs*l.batch, l.activation);

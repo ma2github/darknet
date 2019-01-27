@@ -68,15 +68,19 @@ cost_layer make_cost_layer(int batch, int inputs, COST_TYPE cost_type, float sca
 
 void resize_cost_layer(cost_layer *l, int inputs)
 {
+#ifdef GPU
+    if (gpu_index >= 0) {
+        opencl_free_gpu_only(l->delta_gpu);
+        opencl_free_gpu_only(l->output_gpu);
+    }
+#endif
+
     l->inputs = inputs;
     l->outputs = inputs;
     l->delta = realloc(l->delta, inputs*l->batch*sizeof(float));
     l->output = realloc(l->output, inputs*l->batch*sizeof(float));
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free_gpu_only(l->delta_gpu);
-        opencl_free_gpu_only(l->output_gpu);
-
         l->delta_gpu = opencl_make_array(l->delta, inputs * l->batch);
         l->output_gpu = opencl_make_array(l->output, inputs * l->batch);
     }

@@ -62,6 +62,13 @@ void resize_iseg_layer(layer *l, int w, int h)
     l->w = w;
     l->h = h;
 
+#ifdef GPU
+    if (gpu_index >= 0) {
+        opencl_free_gpu_only(l->delta_gpu);
+        opencl_free_gpu_only(l->output_gpu);
+    }
+#endif
+
     l->outputs = h*w*l->c;
     l->inputs = l->outputs;
 
@@ -70,11 +77,8 @@ void resize_iseg_layer(layer *l, int w, int h)
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free_gpu_only(l->delta_gpu);
-        opencl_free_gpu_only(l->output_gpu);
-
-        l->delta_gpu = opencl_make_array(l->delta, l->batch * l->outputs);
-        l->output_gpu = opencl_make_array(l->output, l->batch * l->outputs);
+        l->delta_gpu = opencl_make_array(l->delta, l->batch*l->outputs);
+        l->output_gpu = opencl_make_array(l->output, l->batch*l->outputs);
     }
 #endif
 }
@@ -113,11 +117,11 @@ void forward_iseg_layer(const layer l, network net)
             }
         }
 
+
         memset(l.counts, 0, 90*sizeof(int));
         for(i = 0; i < 90; ++i){
-            l.counts[i] = 0;
             fill_cpu(ids, 0, l.sums[i], 1);
-
+            
             int c = net.truth[b*l.truths + i*(l.w*l.h+1)];
             if(c < 0) break;
             // add up metric embeddings for each instance
@@ -217,9 +221,7 @@ void forward_iseg_layer_gpu(const layer l, network net)
         return;
     }
 
-    //opencl_pull_array(l.output_gpu, net.input, l.batch*l.inputs);
-    opencl_pull_array(l.output_gpu, l.output, l.batch*l.outputs);
-    memcpy(net.input, l.output, l.batch*l.outputs*sizeof(float));
+    opencl_pull_array(l.output_gpu, net.input, l.batch*l.inputs);
 
     forward_iseg_layer(l, net);
     opencl_push_array(l.delta_gpu, l.delta, l.batch*l.outputs);

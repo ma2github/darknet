@@ -36,7 +36,7 @@ else()
 	endif()
 	list (APPEND DARKNET_CFLAGS "-Wfatal-errors")
 	list (APPEND DARKNET_CFLAGS "-Wno-unused-variable")
-	list (APPEND DARKNET_CFLAGS "-O0")
+	list (APPEND DARKNET_CFLAGS "-O2")
 endif()
 
 # Find OpenCV

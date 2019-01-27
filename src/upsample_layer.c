@@ -52,6 +52,14 @@ void resize_upsample_layer(layer *l, int w, int h)
         l->out_w = w/l->stride;
         l->out_h = h/l->stride;
     }
+
+#ifdef GPU
+    if (gpu_index >= 0) {
+        opencl_free_gpu_only(l->output_gpu);
+        opencl_free_gpu_only(l->delta_gpu);
+    }
+#endif
+
     l->outputs = l->out_w*l->out_h*l->out_c;
     l->inputs = l->h*l->w*l->c;
     l->delta =  realloc(l->delta, l->outputs*l->batch*sizeof(float));
@@ -59,11 +67,8 @@ void resize_upsample_layer(layer *l, int w, int h)
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free_gpu_only(l->output_gpu);
-        opencl_free_gpu_only(l->delta_gpu);
-
-        l->output_gpu = opencl_make_array(l->output, l->outputs * l->batch);
-        l->delta_gpu = opencl_make_array(l->delta, l->outputs * l->batch);
+        l->output_gpu = opencl_make_array(l->output, l->outputs*l->batch);
+        l->delta_gpu = opencl_make_array(l->delta, l->outputs*l->batch);
     }
 #endif
     

@@ -89,8 +89,8 @@ box get_yolo_box(float *x, float *biases, int n, int index, int i, int j, int lw
     box b;
     b.x = (i + x[index + 0*stride]) / lw;
     b.y = (j + x[index + 1*stride]) / lh;
-    b.w = expf(x[index + 2*stride]) * biases[2*n]   / w;
-    b.h = expf(x[index + 3*stride]) * biases[2*n+1] / h;
+    b.w = exp(x[index + 2*stride]) * biases[2*n]   / w;
+    b.h = exp(x[index + 3*stride]) * biases[2*n+1] / h;
     return b;
 }
 
@@ -101,8 +101,8 @@ float delta_yolo_box(box truth, float *x, float *biases, int n, int index, int i
 
     float tx = (truth.x*lw - i);
     float ty = (truth.y*lh - j);
-    float tw = logf(truth.w*w / biases[2*n]);
-    float th = logf(truth.h*h / biases[2*n + 1]);
+    float tw = log(truth.w*w / biases[2*n]);
+    float th = log(truth.h*h / biases[2*n + 1]);
 
     delta[index + 0*stride] = scale * (tx - x[index + 0*stride]);
     delta[index + 1*stride] = scale * (ty - x[index + 1*stride]);
@@ -136,19 +136,20 @@ static int entry_index(layer l, int batch, int location, int entry)
 void forward_yolo_layer(const layer l, network net)
 {
     int i,j,b,t,n;
+    memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
 
+#ifndef GPU
     if (gpu_index < 0) {
-        memcpy(l.output, net.input, l.outputs * l.batch * sizeof(float));
-
-        for (b = 0; b < l.batch; ++b) {
-            for (n = 0; n < l.n; ++n) {
-                int index = entry_index(l, b, n * l.w * l.h, 0);
-                activate_array(l.output + index, 2 * l.w * l.h, LOGISTIC);
-                index = entry_index(l, b, n * l.w * l.h, 4);
-                activate_array(l.output + index, (1 + l.classes) * l.w * l.h, LOGISTIC);
+    for (b = 0; b < l.batch; ++b){
+        for(n = 0; n < l.n; ++n){
+            int index = entry_index(l, b, n*l.w*l.h, 0);
+            activate_array(l.output + index, 2*l.w*l.h, LOGISTIC);
+            index = entry_index(l, b, n*l.w*l.h, 4);
+            activate_array(l.output + index, (1+l.classes)*l.w*l.h, LOGISTIC);
             }
         }
     }
+#endif
 
     memset(l.delta, 0, l.outputs * l.batch * sizeof(float));
     if(!net.train) return;
@@ -201,7 +202,7 @@ void forward_yolo_layer(const layer l, network net)
             box truth = float_to_box(net.truth + t*(4 + 1) + b*l.truths, 1);
 
             if(!truth.x) break;
-            float best_iou = -1.f;
+            float best_iou = 0;
             int best_n = 0;
             i = (truth.x * l.w);
             j = (truth.y * l.h);
@@ -240,7 +241,7 @@ void forward_yolo_layer(const layer l, network net)
             }
         }
     }
-    l.cost[0] = pow(mag_array(l.delta, l.outputs * l.batch), 2);
+    *(l.cost) = pow(mag_array(l.delta, l.outputs * l.batch), 2);
     printf("Region %d Avg IOU: %f, Class: %f, Obj: %f, No Obj: %f, .5R: %f, .75R: %f,  count: %d\n", net.index, avg_iou/count, avg_cat/class_count, avg_obj/count, avg_anyobj/(l.w*l.h*l.n*l.batch), recall/count, recall75/count, count);
 }
 
@@ -366,15 +367,9 @@ void forward_yolo_layer_gpu(const layer l, network net)
         return;
     }
 
-    //opencl_pull_array(l.output_gpu, net.input, l.batch*l.inputs);
-    opencl_pull_array(l.output_gpu, l.output, l.batch*l.outputs);
-    memcpy(net.input, l.output, l.batch*l.outputs*sizeof(float));
-
+    opencl_pull_array(l.output_gpu, net.input, l.batch*l.inputs);
     forward_yolo_layer(l, net);
-    // TODO: WHY NOT?
-    //opencl_push_array(l.output_gpu, l.output, l.batch*l.outputs);
-    if(!net.train) return;
-    opencl_pull_array(l.delta_gpu, l.delta, l.batch*l.outputs);
+    opencl_push_array(l.delta_gpu, l.delta, l.batch*l.outputs);
 }
 
 void backward_yolo_layer_gpu(const layer l, network net)

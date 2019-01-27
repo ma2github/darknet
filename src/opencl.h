@@ -9,6 +9,7 @@
 
 #ifdef GPU
 #ifdef __APPLE__
+#define CL_SILENCE_DEPRECATION
 #include <OpenCL/cl.h>
 #include <OpenCL/cl_ext.h>
 #else

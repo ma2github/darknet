@@ -32,8 +32,8 @@ layer make_shortcut_layer(int batch, int index, int w, int h, int c, int w2, int
     if (gpu_index >= 0) {
         l.forward_gpu = forward_shortcut_layer_gpu;
         l.backward_gpu = backward_shortcut_layer_gpu;
-        l.delta_gpu = opencl_make_array(l.delta, l.outputs * batch);
-        l.output_gpu = opencl_make_array(l.output, l.outputs * batch);
+        l.delta_gpu = opencl_make_array(l.delta, l.outputs*batch);
+        l.output_gpu = opencl_make_array(l.output, l.outputs*batch);
     }
 #endif
     return l;
@@ -45,6 +45,14 @@ void resize_shortcut_layer(layer *l, int w, int h)
     assert(l->h == l->out_h);
     l->w = l->out_w = w;
     l->h = l->out_h = h;
+
+#ifdef GPU
+    if (gpu_index >= 0) {
+        opencl_free_gpu_only(l->output_gpu);
+        opencl_free_gpu_only(l->delta_gpu);
+    }
+#endif
+
     l->outputs = w*h*l->out_c;
     l->inputs = l->outputs;
     l->delta =  realloc(l->delta, l->outputs*l->batch*sizeof(float));
@@ -52,11 +60,8 @@ void resize_shortcut_layer(layer *l, int w, int h)
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free_gpu_only(l->output_gpu);
-        opencl_free_gpu_only(l->delta_gpu);
-
-        l->output_gpu = opencl_make_array(l->output, l->outputs * l->batch);
-        l->delta_gpu = opencl_make_array(l->delta, l->outputs * l->batch);
+        l->output_gpu = opencl_make_array(l->output, l->outputs*l->batch);
+        l->delta_gpu = opencl_make_array(l->delta, l->outputs*l->batch);
     }
 #endif
     

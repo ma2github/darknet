@@ -33,7 +33,7 @@ void binarize_weights(float *weights, int n, int size, float *binary)
     for(f = 0; f < n; ++f){
         float mean = 0;
         for(i = 0; i < size; ++i){
-            mean += fabsf(weights[f*size + i]);
+            mean += fabs(weights[f*size + i]);
         }
         mean = mean / size;
         for(i = 0; i < size; ++i){
@@ -56,7 +56,7 @@ void binarize_input(float *input, int n, int size, float *binary)
     for(s = 0; s < size; ++s){
         float mean = 0;
         for(i = 0; i < n; ++i){
-            mean += fabsf(input[i*size + s]);
+            mean += fabs(input[i*size + s]);
         }
         mean = mean / n;
         for(i = 0; i < n; ++i){
@@ -86,8 +86,7 @@ image get_convolutional_delta(convolutional_layer l)
 }
 
 static size_t get_workspace_size(layer l){
-
-    return (size_t)l.out_h*l.out_w*l.size*l.size*l.c/l.groups;
+    return (size_t)l.out_h*l.out_w*l.size*l.size*l.c/l.groups*sizeof(float);
 }
 
 convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int n, int groups, int size, int stride, int padding, ACTIVATION activation, int batch_normalize, int binary, int xnor, int adam)
@@ -118,10 +117,10 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     l.nweights = c/groups*n*size*size;
     l.nbiases = n;
 
-    //float scale = 1.f/sqrt(size*size*c);
+    // float scale = 1./sqrt(size*size*c);
     float scale = sqrt(2./(size*size*c/l.groups));
-    //float scale = 1.0027f;
     //printf("convscale %f\n", scale);
+    //scale = .02;
     //for(i = 0; i < c*n*size*size; ++i) l.weights[i] = scale*rand_uniform(-1, 1);
     for(i = 0; i < l.nweights; ++i) l.weights[i] = scale*rand_normal();
     int out_w = convolutional_out_width(l);
@@ -152,7 +151,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
         l.scales = calloc(n, sizeof(float));
         l.scale_updates = calloc(n, sizeof(float));
         for(i = 0; i < n; ++i){
-            l.scales[i] = 1.f;
+            l.scales[i] = 1;
         }
 
         l.mean = calloc(n, sizeof(float));
@@ -163,6 +162,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
 
         l.rolling_mean = calloc(n, sizeof(float));
         l.rolling_variance = calloc(n, sizeof(float));
+
         l.x = calloc(l.batch*l.outputs, sizeof(float));
         l.x_norm = calloc(l.batch*l.outputs, sizeof(float));
     }
@@ -275,6 +275,29 @@ void test_convolutional_layer()
 
 void resize_convolutional_layer(convolutional_layer *l, int w, int h)
 {
+#ifdef GPU
+    if (gpu_index >= 0) {
+        if (l->delta_gpu.mem) opencl_free_gpu_only(l->delta_gpu);
+        if (l->output_gpu.mem) opencl_free_gpu_only(l->output_gpu);
+        if (l->batch_normalize) {
+            opencl_free_gpu_only(l->mean_gpu);
+            opencl_free_gpu_only(l->variance_gpu);
+            
+            opencl_free_gpu_only(l->rolling_mean_gpu);
+            opencl_free_gpu_only(l->rolling_variance_gpu);
+            
+            opencl_free_gpu_only(l->mean_delta_gpu);
+            opencl_free_gpu_only(l->variance_delta_gpu);
+
+            opencl_free_gpu_only(l->scales_gpu);
+            opencl_free_gpu_only(l->scale_updates_gpu);
+
+            opencl_free_gpu_only(l->x_gpu);
+            opencl_free_gpu_only(l->x_norm_gpu);
+        }
+    }
+#endif
+
     l->w = w;
     l->h = h;
     int out_w = convolutional_out_width(*l);
@@ -289,24 +312,41 @@ void resize_convolutional_layer(convolutional_layer *l, int w, int h)
     l->output = realloc(l->output, l->batch*l->outputs*sizeof(float));
     l->delta  = realloc(l->delta,  l->batch*l->outputs*sizeof(float));
     if(l->batch_normalize){
+        l->mean = realloc(l->mean, l->n*sizeof(float));
+        l->variance = realloc(l->variance, l->n*sizeof(float));
+
+        l->rolling_mean = realloc(l->rolling_mean, l->n*sizeof(float));
+        l->rolling_variance = realloc(l->rolling_variance, l->n*sizeof(float));
+
+        l->mean_delta = realloc(l->mean_delta, l->n*sizeof(float));
+        l->variance_delta = realloc(l->variance_delta, l->n*sizeof(float));
+
+        l->scales = realloc(l->scales, l->n*sizeof(float));
+        l->scale_updates = realloc(l->scale_updates, l->n*sizeof(float));
+
         l->x = realloc(l->x, l->batch*l->outputs*sizeof(float));
         l->x_norm  = realloc(l->x_norm, l->batch*l->outputs*sizeof(float));
     }
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        if (l->delta_gpu.mem) opencl_free_gpu_only(l->delta_gpu);
-        if (l->output_gpu.mem) opencl_free_gpu_only(l->output_gpu);
-        if (l->batch_normalize) {
-            opencl_free_gpu_only(l->x_gpu);
-            opencl_free_gpu_only(l->x_norm_gpu);
-        }
-
         l->delta_gpu = opencl_make_array(l->delta, l->batch * l->outputs);
         l->output_gpu = opencl_make_array(l->output, l->batch * l->outputs);
         if (l->batch_normalize) {
-            l->x_gpu = opencl_make_array(l->output, l->batch * l->outputs);
-            l->x_norm_gpu = opencl_make_array(l->output, l->batch * l->outputs);
+            l->mean_gpu = opencl_make_array(l->mean, l->n);
+            l->variance_gpu = opencl_make_array(l->variance, l->n);
+
+            l->rolling_mean_gpu = opencl_make_array(l->rolling_mean, l->n);
+            l->rolling_variance_gpu = opencl_make_array(l->rolling_variance, l->n);
+
+            l->mean_delta_gpu = opencl_make_array(l->mean_delta, l->n);
+            l->variance_delta_gpu = opencl_make_array(l->variance_delta, l->n);
+
+            l->scales_gpu = opencl_make_array(l->scales, l->n);
+            l->scale_updates_gpu = opencl_make_array(l->scale_updates, l->n);
+
+            l->x_gpu = opencl_make_array(l->x, l->batch * l->outputs);
+            l->x_norm_gpu = opencl_make_array(l->x_norm, l->batch * l->outputs);
         }
     }
 #endif
@@ -325,13 +365,13 @@ void add_bias(float *output, float *biases, int batch, int n, int size)
     }
 }
 
-void scale_bias(float *output, float *biases, int batch, int n, int size)
+void scale_bias(float *output, float *scales, int batch, int n, int size)
 {
     int i,j,b;
     for(b = 0; b < batch; ++b){
         for(i = 0; i < n; ++i){
             for(j = 0; j < size; ++j){
-                output[(b*n + i)*size + j] *= biases[i];
+                output[(b*n + i)*size + j] *= scales[i];
             }
         }
     }

@@ -188,6 +188,7 @@ char *find_char_arg(int argc, char **argv, char *arg, char *def)
     return def;
 }
 
+
 char *basecfg(char *cfgfile)
 {
     char *c = cfgfile;
@@ -697,15 +698,14 @@ float rand_normal()
 
 size_t rand_size_t()
 {
-    return  
-        ((size_t)(rand()&0xff) << 56) |
+    return  ((size_t)(rand()&0xff) << 56) | 
         ((size_t)(rand()&0xff) << 48) |
         ((size_t)(rand()&0xff) << 40) |
         ((size_t)(rand()&0xff) << 32) |
         ((size_t)(rand()&0xff) << 24) |
         ((size_t)(rand()&0xff) << 16) |
-        ((size_t)(rand()&0xff) <<  8) |
-        ((size_t)(rand()&0xff) <<  0);
+        ((size_t)(rand()&0xff) << 8) |
+        ((size_t)(rand()&0xff) << 0);
 }
 
 float rand_uniform(float min, float max)

@@ -74,6 +74,13 @@ void resize_reorg_layer(layer *l, int w, int h)
         l->out_c = c*(stride*stride);
     }
 
+#ifdef GPU
+    if (gpu_index >= 0) {
+        opencl_free_gpu_only(l->output_gpu);
+        opencl_free_gpu_only(l->delta_gpu);
+    }
+#endif
+
     l->outputs = l->out_h * l->out_w * l->out_c;
     l->inputs = l->outputs;
     int output_size = l->outputs * l->batch;
@@ -83,9 +90,6 @@ void resize_reorg_layer(layer *l, int w, int h)
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free_gpu_only(l->output_gpu);
-        opencl_free_gpu_only(l->delta_gpu);
-
         l->output_gpu = opencl_make_array(l->output, output_size);
         l->delta_gpu = opencl_make_array(l->delta, output_size);
     }
