@@ -23,6 +23,7 @@ void train_classifier(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
     printf("%d\n", ngpus);
+    ngpus = 1;
     network **nets = calloc(ngpus, sizeof(network*));
 
     srand(time(0));

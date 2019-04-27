@@ -17,6 +17,7 @@
 #include <CL/cl_ext.h>
 #endif
 
+/*
 #if defined(cl_khr_fp64)
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #define DOUBLE_SUPPORT_AVAILABLE
@@ -28,6 +29,7 @@
 //#define float double
 //#define cl_float cl_double
 #endif
+*/
 
 #include <math.h>
 
@@ -61,6 +63,8 @@ typedef struct _cl_mem_ext {
     cl_mem_ext (*add) (cl_mem_ext dat, int add, size_t len);
     cl_mem_ext (*rem) (cl_mem_ext dat, int rem, size_t len);
     void* ptr;
+    void* map;
+    cl_command_queue que;
 } cl_mem_ext;
 
 cl_mem_ext inc(cl_mem_ext buf, int inc, size_t len);
@@ -71,7 +75,7 @@ cl_mem_ext rem(cl_mem_ext buf, int dec, size_t len);
 cl_mem_ext upd(cl_mem_ext buf, size_t len);
 
 cl_context opencl_context;
-cl_command_queue* opencl_queues;
+cl_command_queue opencl_queue;
 cl_device_id* opencl_devices;
 
 void activation_kernel_init(void);

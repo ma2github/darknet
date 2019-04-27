@@ -353,6 +353,23 @@ int resize_network(network *net, int w, int h)
     if (gpu_index >= 0) {
         opencl_set_device(net->gpu_index);
     }
+    if (gpu_index >= 0) {
+        //opencl_free(net->output_gpu);
+        opencl_free(net->input_gpu);
+        opencl_free(net->truth_gpu);
+        opencl_free(net->delta_gpu);
+    }
+    else {
+        //free(net->output);
+        free(net->input);
+        free(net->truth);
+        free(net->delta);
+    }
+#else
+    //free(net->output);
+    free(net->input);
+    free(net->truth);
+    free(net->delta);
 #endif
     int i;
     //if(w == net->w && h == net->h) return 0;
@@ -404,16 +421,6 @@ int resize_network(network *net, int w, int h)
     net->outputs = out.outputs;
     net->truths = out.outputs;
     if(net->layers[net->n-1].truths) net->truths = net->layers[net->n-1].truths;
-#ifdef GPU
-    if (gpu_index >= 0) {
-        opencl_free_gpu_only(net->input_gpu);
-        opencl_free_gpu_only(net->truth_gpu);
-        opencl_free_gpu_only(net->delta_gpu);
-    }
-#endif
-    free(net->input);
-    free(net->truth);
-    free(net->delta);
     net->output = out.output;
     net->input = calloc(net->inputs*net->batch, sizeof(float));
     net->truth = calloc(net->truths*net->batch, sizeof(float));
@@ -423,18 +430,18 @@ int resize_network(network *net, int w, int h)
         net->output_gpu = out.output_gpu;
         net->input_gpu = opencl_make_array(net->input, net->inputs * net->batch);
         net->truth_gpu = opencl_make_array(net->truth, net->truths * net->batch);
-        net->delta_gpu = opencl_make_array(net->delta, net->outputs * net->batch);
+        //net->delta_gpu = opencl_make_array(net->delta, net->outputs * net->batch);
         opencl_free(net->workspace_gpu);
-        net->workspace = calloc(1, workspace_size);
-        net->workspace_gpu = opencl_make_array(net->workspace, (workspace_size-1)/sizeof(float)+1);
+        net->workspace = calloc(workspace_size, sizeof(float));
+        net->workspace_gpu = opencl_make_array(net->workspace, workspace_size);
     }
     else {
         free(net->workspace);
-        net->workspace = calloc(1, workspace_size);
+        net->workspace = calloc(workspace_size, sizeof(float));
     }
 #else
     free(net->workspace);
-    net->workspace = calloc(1, workspace_size);
+    net->workspace = calloc(workspace_size, sizeof(float));
 #endif
     //fprintf(stderr, " Done!\n");
     return 0;

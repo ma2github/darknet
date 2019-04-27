@@ -69,15 +69,22 @@ void resize_yolo_layer(layer *l, int w, int h)
 
     l->outputs = h*w*l->n*(l->classes + 4 + 1);
     l->inputs = l->outputs;
+#ifdef GPU
+    if (gpu_index >= 0) {
+        opencl_free(l->delta_gpu);
+        opencl_free(l->output_gpu);
+    }
+    else {
+        free(l->delta);
+        free(l->output);
+    }
+#endif
 
-    l->output = realloc(l->output, l->batch*l->outputs*sizeof(float));
-    l->delta = realloc(l->delta, l->batch*l->outputs*sizeof(float));
+    l->delta = calloc(l->batch * l->outputs, sizeof(float));
+    l->output = calloc(l->batch * l->outputs, sizeof(float));
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free_gpu_only(l->delta_gpu);
-        opencl_free_gpu_only(l->output_gpu);
-
         l->delta_gpu = opencl_make_array(l->delta, l->batch * l->outputs);
         l->output_gpu = opencl_make_array(l->output, l->batch * l->outputs);
     }

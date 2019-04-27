@@ -735,8 +735,8 @@ void softmax_offset_tree(cl_mem_ext input, int offset, int spatial, int batch, i
                   &tree_groups_offset.mem, sizeof(cl_mem)
     );
 
-    opencl_free_gpu_only(tree_groups_size);
-    opencl_free_gpu_only(tree_groups_offset);
+    opencl_free(tree_groups_size);
+    opencl_free(tree_groups_offset);
 }
 
 void softmax_offset_gpu(cl_mem_ext input, int offset, int n, int batch, int batch_offset, int groups, int group_offset, int stride, float temp, cl_mem_ext output)

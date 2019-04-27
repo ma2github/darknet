@@ -219,7 +219,7 @@ void gemm_offset_gpu(int TA, int TB, int M, int N, int K,
                         B_gpu.mem, offset_B, ldb,
                         BETA,
                         C_gpu.mem, offset_C, ldc,
-                        1, &opencl_queues[opencl_device_id_t], 0, NULL, NULL);
+                        1, &opencl_queue, 0, NULL, NULL);
 
     if (clErr != CL_SUCCESS)
     {
@@ -291,7 +291,7 @@ void time_gpu(int TA, int TB, int m, int k, int n)
     clock_t start = clock(), end;
     for(i = 0; i<iter; ++i){
         gemm_gpu(TA,TB,m,n,k,1,a_cl,lda,b_cl,ldb,1,c_cl,n);
-        clFinish(opencl_queues[opencl_device_id_t]);
+        clFinish(opencl_queue);
     }
     double flop = ((double)m)*n*(2.*k + 2.)*iter;
     double gflop = flop/pow(10., 9);

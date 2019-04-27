@@ -64,16 +64,23 @@ void resize_iseg_layer(layer *l, int w, int h)
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free_gpu_only(l->delta_gpu);
-        opencl_free_gpu_only(l->output_gpu);
+        opencl_free(l->delta_gpu);
+        opencl_free(l->output_gpu);
     }
+    else {
+        free(l->delta);
+        free(l->output);
+    }
+#else
+    free(l->delta);
+    free(l->output);
 #endif
 
     l->outputs = h*w*l->c;
     l->inputs = l->outputs;
 
-    l->output = realloc(l->output, l->batch*l->outputs*sizeof(float));
-    l->delta = realloc(l->delta, l->batch*l->outputs*sizeof(float));
+    l->output = calloc(l->batch*l->outputs, sizeof(float));
+    l->delta = calloc(l->batch*l->outputs, sizeof(float));
 
 #ifdef GPU
     if (gpu_index >= 0) {
