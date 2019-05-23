@@ -11,6 +11,7 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 list *get_paths(char *filename)
 {
+    filename[strcspn(filename, "\n\r")] = 0;
     char *path;
     FILE *file = fopen(filename, "r");
     if(!file) file_error(filename);
@@ -169,6 +170,7 @@ matrix load_image_augment_paths(char **paths, int n, int min, int max, int size,
 
 box_label *read_boxes(char *filename, int *n)
 {
+    filename[strcspn(filename, "\n\r")] = 0;
     FILE *file = fopen(filename, "r");
     if(!file) file_error(filename);
     float x, y, h, w;

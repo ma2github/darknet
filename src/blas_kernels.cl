@@ -542,8 +542,10 @@ __kernel void reorg_kernel(int N, __global float *x, int w, int h, int c, int ba
 
     int out_index = w2 + w*stride*(h2 + h*stride*(c2 + out_c*b));
 
-    if(forward) out[out_index] = x[in_index];
-    else out[in_index] = x[out_index];
+    if(forward)
+        out[out_index] = x[in_index];
+    else
+        out[in_index] = x[out_index];
 }
 
 
@@ -639,8 +641,10 @@ __kernel void flatten_kernel(int N, __global float *x, int spatial, int layers, 
     int i1 = b*layers*spatial + in_c*spatial + in_s;
     int i2 = b*layers*spatial + in_s*layers +  in_c;
 
-    if (forward) out[i2] = x[i1];
-    else out[i1] = x[i2];
+    if (forward)
+        out[i2] = x[i1];
+    else
+        out[i1] = x[i2];
 }
 
 
@@ -886,49 +890,6 @@ __kernel void dot_kernel(__global float *output, float scale, int batch, int n, 
     }
 }
 
-//Source: https://www.sharcnet.ca/help/index.php/Porting_CUDA_to_OpenCL
-void atomic_add_global(volatile global float *source, const float operand);
-
-void atomic_add_global(volatile global float *source, const float operand) {
-    union {
-        unsigned int intVal;
-        float floatVal;
-    } newVal;
-    union {
-        unsigned int intVal;
-        float floatVal;
-    } prevVal;
-
-    do {
-        prevVal.floatVal = *source;
-        newVal.floatVal = prevVal.floatVal + operand;
-    } while (atomic_cmpxchg((volatile global unsigned int *)source, prevVal.intVal, newVal.intVal) != prevVal.intVal);
-}
-
-void atomic_add_local(volatile local float *source, const float operand);
-
-void atomic_add_local(volatile local float *source, const float operand) {
-    union {
-        unsigned int intVal;
-        float floatVal;
-    } newVal;
-
-    union {
-        unsigned int intVal;
-        float floatVal;
-    } prevVal;
-
-    do {
-        prevVal.floatVal = *source;
-        newVal.floatVal = prevVal.floatVal + operand;
-    } while (atomic_cmpxchg((volatile local unsigned int *)source, prevVal.intVal, newVal.intVal) != prevVal.intVal);
-}
-
-inline void atomicAdd_f(__global float* address, float value)
-{
-    float old = value;
-    while ((old = atomic_xchg(address, atomic_xchg(address, 0.0f)+old))!=0.0f);
-}
 
 __kernel void upsample_kernel(int N, __global float *x, int w, int h, int c, int batch, int stride, int forward, float scale, __global float *out)
 {
@@ -949,9 +910,12 @@ __kernel void upsample_kernel(int N, __global float *x, int w, int h, int c, int
 
     int in_index = b*w*h*c + in_c*w*h + in_h*w + in_w;
 
-    if(forward) out[out_index] += scale * x[in_index];
-    else atomic_add_global(x+in_index, scale * out[out_index]);
+    if(forward)
+        out[out_index] += scale * x[in_index];
+    else
+        x[in_index] += scale * out[out_index];
 }
+
 
 __kernel void gemm_kernel(
         int TA, int TB,

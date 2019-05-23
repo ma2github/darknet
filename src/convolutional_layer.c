@@ -280,18 +280,6 @@ void resize_convolutional_layer(convolutional_layer *l, int w, int h)
         if (l->delta_gpu.mem) opencl_free(l->delta_gpu);
         if (l->output_gpu.mem) opencl_free(l->output_gpu);
         if (l->batch_normalize) {
-            opencl_free(l->mean_gpu);
-            opencl_free(l->variance_gpu);
-            
-            opencl_free(l->rolling_mean_gpu);
-            opencl_free(l->rolling_variance_gpu);
-            
-            opencl_free(l->mean_delta_gpu);
-            opencl_free(l->variance_delta_gpu);
-
-            opencl_free(l->scales_gpu);
-            opencl_free(l->scale_updates_gpu);
-
             opencl_free(l->x_gpu);
             opencl_free(l->x_norm_gpu);
         }
@@ -300,18 +288,6 @@ void resize_convolutional_layer(convolutional_layer *l, int w, int h)
         if (l->delta) free(l->delta);
         if (l->output) free(l->output);
         if (l->batch_normalize) {
-            free(l->mean);
-            free(l->variance);
-
-            free(l->rolling_mean);
-            free(l->rolling_variance);
-
-            free(l->mean_delta);
-            free(l->variance_delta);
-
-            free(l->scales);
-            free(l->scale_updates);
-
             free(l->x);
             free(l->x_norm);
         }
@@ -351,18 +327,6 @@ void resize_convolutional_layer(convolutional_layer *l, int w, int h)
     l->output = calloc(l->batch*l->outputs, sizeof(float));
     l->delta  = calloc(l->batch*l->outputs, sizeof(float));
     if(l->batch_normalize){
-        l->mean = calloc(l->n, sizeof(float));
-        l->variance = calloc(l->n, sizeof(float));
-
-        l->rolling_mean = calloc(l->n, sizeof(float));
-        l->rolling_variance = calloc(l->n, sizeof(float));
-
-        l->mean_delta = calloc(l->n, sizeof(float));
-        l->variance_delta = calloc(l->n, sizeof(float));
-
-        l->scales = calloc(l->n, sizeof(float));
-        l->scale_updates = calloc(l->n, sizeof(float));
-
         l->x = calloc(l->batch*l->outputs, sizeof(float));
         l->x_norm  = calloc(l->batch*l->outputs, sizeof(float));
     }
@@ -372,18 +336,6 @@ void resize_convolutional_layer(convolutional_layer *l, int w, int h)
         l->delta_gpu = opencl_make_array(l->delta, l->batch * l->outputs);
         l->output_gpu = opencl_make_array(l->output, l->batch * l->outputs);
         if (l->batch_normalize) {
-            l->mean_gpu = opencl_make_array(l->mean, l->n);
-            l->variance_gpu = opencl_make_array(l->variance, l->n);
-
-            l->rolling_mean_gpu = opencl_make_array(l->rolling_mean, l->n);
-            l->rolling_variance_gpu = opencl_make_array(l->rolling_variance, l->n);
-
-            l->mean_delta_gpu = opencl_make_array(l->mean_delta, l->n);
-            l->variance_delta_gpu = opencl_make_array(l->variance_delta, l->n);
-
-            l->scales_gpu = opencl_make_array(l->scales, l->n);
-            l->scale_updates_gpu = opencl_make_array(l->scale_updates, l->n);
-
             l->x_gpu = opencl_make_array(l->x, l->batch * l->outputs);
             l->x_norm_gpu = opencl_make_array(l->x_norm, l->batch * l->outputs);
         }

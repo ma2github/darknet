@@ -639,6 +639,7 @@ image ipl_to_image(IplImage* src)
 
 image load_image_cv(char *filename, int channels)
 {
+    filename[strcspn(filename, "\n\r")] = 0;
     IplImage* src = 0;
     int flag = -1;
     if (channels == 0) flag = -1;
@@ -1472,6 +1473,7 @@ void test_resize(char *filename)
 
 image load_image_stb(char *filename, int channels)
 {
+    filename[strcspn(filename, "\n\r")] = 0;
     int w, h, c;
     unsigned char *data = stbi_load(filename, &w, &h, &c, channels);
     if (!data) {

@@ -439,7 +439,7 @@ void opencl_load_buffer(const char *buffer, const size_t size, cl_program *outpu
     clErr = clBuildProgram(
             *output,
             1,
-            &opencl_devices[opencl_device_id_t],
+            opencl_devices,
             NULL, NULL, NULL);
 
     if (clErr != CL_SUCCESS)
