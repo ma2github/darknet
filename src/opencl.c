@@ -588,6 +588,7 @@ void opencl_init(int *gpus, int ngpus) {
     }
 
     opencl_devices = (cl_device_id *) calloc((cl_uint)ngpus, sizeof(cl_device_id));
+    opencl_queues = (cl_command_queue *) calloc((cl_uint)ngpus, sizeof(cl_command_queue));
 
     int i;
     for(i = 0; i < ngpus; ++i)
@@ -606,12 +607,12 @@ void opencl_init(int *gpus, int ngpus) {
     }
 
 
-    opencl_queue = clCreateCommandQueue(opencl_context,
-                                            *opencl_devices, CL_FALSE, &clErr);
-
     int d;
     for (d = 0; d < ngpus; ++d) {
         opencl_device_id_t = d;
+
+        opencl_queues[opencl_device_id_t] = clCreateCommandQueue(opencl_context,
+                                                                 opencl_devices[opencl_device_id_t], CL_FALSE, &clErr);
 
         if (clErr != CL_SUCCESS) {
             printf("opencl_init: Could not create queue.\n");
@@ -658,6 +659,15 @@ void opencl_init(int *gpus, int ngpus) {
 #endif
         dropout_kernel_init();
     }
+
+#if defined(DARKNET_VERBOSE_GPU)
+    // Print out usefull information.
+    const size_t qbufferSize = 2048;
+    char *qbuffer = (char *) calloc(qbufferSize, sizeof(char));
+    clGetCommandQueueInfo(opencl_queues[opencl_device_id_t], CL_QUEUE_REFERENCE_COUNT, qbufferSize * sizeof(char), qbuffer, NULL);
+    printf("Device opencl queue num device(s) used: %s\n", qbuffer);
+#endif
+
     // TODO: TEST CPU & GPU (3)
 #if defined(DARKNET_TEST_CPU_AND_GPU)
     opencl_cpu_gpu_test();
@@ -678,7 +688,7 @@ void opencl_deinit(int *gpus, int ngpus)
     for (a = 0, d = ngpus-1; a < ngpus; --d, ++a) {
         opencl_device_id_t = a;
 
-        clFinish(opencl_queue);
+        clFinish(opencl_queues[opencl_device_id_t]);
         gpu_index = -1;
 
         activation_kernel_release();
@@ -694,13 +704,14 @@ void opencl_deinit(int *gpus, int ngpus)
 #endif
         dropout_kernel_release();
 
-        clReleaseCommandQueue(opencl_queue);
+        clReleaseCommandQueue(opencl_queues[opencl_device_id_t]);
     }
 
     free(cl_props);
     clReleaseContext(opencl_context);
     opencl_context = 0;
 
+    free(opencl_queues);
     free(opencl_devices);
 
     free(cl_native_double_width_s);
@@ -752,7 +763,7 @@ void opencl_kernel(cl_kernel kernel, const dim2 globalItemSize, const int argc, 
     clock_t t;
     t = clock();
 #endif
-    clErr = clEnqueueNDRangeKernel(opencl_queue, kernel, 2,
+    clErr = clEnqueueNDRangeKernel(opencl_queues[opencl_device_id_t], kernel, 2,
             globalOffser, globalItems, NULL, 0, NULL, NULL);
 #ifdef BENCHMARK
     t = clock() - t;
@@ -872,7 +883,7 @@ cl_mem_ext opencl_make_array(float *x, size_t n)
     buf.add = add;
     buf.rem = rem;
 
-    buf.que = opencl_queue;
+    buf.que = opencl_queues[opencl_device_id_t];
 
     return buf;
 }
@@ -901,7 +912,7 @@ cl_mem_ext opencl_make_int_array(int *x, size_t n)
     buf.add = add;
     buf.rem = rem;
 
-    buf.que = opencl_queue;
+    buf.que = opencl_queues[opencl_device_id_t];
 
     return buf;
 }
@@ -1019,6 +1030,23 @@ void opencl_free(cl_mem_ext x_gpu)
     x_gpu.que = 0;
     free(x_gpu.ptr);
     x_gpu.ptr = 0;
+}
+
+void opencl_free_gpu_only(cl_mem_ext x_gpu)
+{
+    x_gpu.len = 0;
+    x_gpu.obs = 0;
+    x_gpu.mem = 0;
+    x_gpu.off = 0;
+    x_gpu.cnt = 0;
+    x_gpu.inc = 0;
+    x_gpu.dec = 0;
+    x_gpu.add = 0;
+    x_gpu.rem = 0;
+    clReleaseMemObject(x_gpu.org);
+    x_gpu.org = 0;
+    x_gpu.map = 0;
+    x_gpu.que = 0;
 }
 
 cl_mem_ext inc(cl_mem_ext buf, int inc, size_t len) {

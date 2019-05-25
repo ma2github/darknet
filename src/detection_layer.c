@@ -262,10 +262,9 @@ void forward_detection_layer_gpu(const detection_layer l, network net)
         return;
     }
 
-    opencl_pull_array(net.output_gpu, net.input, l.batch*l.inputs);
+    opencl_pull_array(net.input_gpu, net.input, l.batch*l.inputs);
     forward_detection_layer(l, net);
-    //opencl_push_array(l.output_gpu, l.output, l.batch*l.outputs);
-    if(!net.train) return;
+    opencl_push_array(l.output_gpu, l.output, l.batch*l.outputs);
     opencl_push_array(l.delta_gpu, l.delta, l.batch*l.inputs);
 }
 
