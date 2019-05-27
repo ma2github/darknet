@@ -20,6 +20,11 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     int i;
     for(i = 0; i < ngpus; ++i){
         srand(seed);
+#ifdef GPU
+        if(gpu_index >= 0){
+            opencl_set_device(gpus[i]);
+        }
+#endif
         nets[i] = load_network(cfgfile, weightfile, clear);
 #ifdef GPU
         nets[i]->gpu_index = gpus[i];
