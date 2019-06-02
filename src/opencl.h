@@ -74,7 +74,7 @@ cl_mem_ext add(cl_mem_ext buf, int inc, size_t len);
 cl_mem_ext rem(cl_mem_ext buf, int dec, size_t len);
 cl_mem_ext upd(cl_mem_ext buf, size_t len);
 
-cl_context* opencl_contexts;
+cl_context opencl_context;
 cl_command_queue* opencl_queues;
 cl_device_id* opencl_devices;
 

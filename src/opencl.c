@@ -433,7 +433,7 @@ void opencl_load_buffer(const char *buffer, const size_t size, cl_program *outpu
     if (clErr != CL_SUCCESS)
     {
         printf("opencl_load: could not create program. error: %s\n", clCheckError(clErr));
-        return;
+        exit(-1);
     }
 
     clErr = clBuildProgram(
@@ -451,7 +451,7 @@ void opencl_load_buffer(const char *buffer, const size_t size, cl_program *outpu
         printf("CL_PROGRAM_BUILD_LOG:\n%s\n", ebuffer);
         printf("CODE:\n%s\n", buffer);
         free(ebuffer);
-        exit(1);
+        exit(-1);
     }
 #else
     cl_int clErr;
@@ -474,24 +474,24 @@ void opencl_load_buffer(const char *buffer, const size_t size, cl_program *outpu
 
     size_t headsz = strlen(code_header);
 
-    prhd = clCreateProgramWithSource(opencl_contexts[opencl_device_id_t], CL_TRUE,
+    prhd = clCreateProgramWithSource(opencl_context, CL_TRUE,
                                      (const char**)&code_header, &headsz, &clErr);
 
     if (clErr != CL_SUCCESS)
     {
         printf("opencl_load: could not create header. error: %s\n", clCheckError(clErr));
-        return;
+        exit(-1);
     }
 
     cl_program prog[1];
 
-    prog[0] = clCreateProgramWithSource(opencl_contexts[opencl_device_id_t], CL_TRUE,
+    prog[0] = clCreateProgramWithSource(opencl_context, CL_TRUE,
                                         (const char**)&buffer, &size, &clErr);
 
     if (clErr != CL_SUCCESS)
     {
         printf("opencl_load: could not create program. error: %s\n", clCheckError(clErr));
-        return;
+        exit(-1);
     }
 
     cl_program input_headers[1] = { prhd };
@@ -519,10 +519,11 @@ void opencl_load_buffer(const char *buffer, const size_t size, cl_program *outpu
         clGetProgramBuildInfo(prog[0], opencl_devices[opencl_device_id_t], CL_PROGRAM_BUILD_LOG, 0x10000000 * sizeof(char), cbuffer, &len);
         printf("CL_PROGRAM_BUILD_LOG:\n%s\n", cbuffer);
         free(cbuffer);
+        exit(-1);
     }
 
     *output =
-            clLinkProgram(opencl_contexts[opencl_device_id_t], opencl_device_ct_t, opencl_devices,
+            clLinkProgram(opencl_context, opencl_device_ct_t, opencl_devices,
                           "-cl-denorms-are-zero "
                           "-cl-kernel-arg-info", 1, prog, NULL, NULL, &clErr);
 
@@ -534,6 +535,7 @@ void opencl_load_buffer(const char *buffer, const size_t size, cl_program *outpu
         clGetProgramBuildInfo(*output, opencl_devices[opencl_device_id_t], CL_PROGRAM_BUILD_LOG, 0x10000000 * sizeof(char), cbuffer, &len);
         printf("CL_PROGRAM_BUILD_LOG:\n%s\n", cbuffer);
         free(cbuffer);
+        exit(-1);
     }
 #endif
 }
@@ -559,10 +561,8 @@ void opencl_init(int *gpus, int ngpus) {
     cl_native_max_group_size_s = calloc(ngpus, sizeof(int));
     cl_native_address_bits_s = calloc(ngpus, sizeof(int));
 
-    opencl_contexts = (cl_context *) calloc((cl_uint)ngpus, sizeof(cl_context));
     opencl_devices = (cl_device_id *) calloc((cl_uint)ngpus, sizeof(cl_device_id));
     opencl_queues = (cl_command_queue *) calloc((cl_uint)ngpus, sizeof(cl_command_queue));
-
 
     cl_int clErr;
 
@@ -580,7 +580,7 @@ void opencl_init(int *gpus, int ngpus) {
 
     if (clErr != CL_SUCCESS) {
         printf("opencl_init: Could not get platform IDs.\n");
-        return;
+        exit(-1);
     }
 
     cl_uint num = 32;
@@ -590,7 +590,7 @@ void opencl_init(int *gpus, int ngpus) {
 
     if (clErr != CL_SUCCESS) {
         printf("opencl_init: Could not get device IDs.\n");
-        return;
+        exit(-1);
     }
     else {
         printf("Device IDs: %d\n", all);
@@ -602,27 +602,26 @@ void opencl_init(int *gpus, int ngpus) {
         opencl_devices[i] = devices[gpus[i]];
     }
 
+    cl_props[1] = (cl_context_properties) clPlatform;
+
+
+    opencl_context = clCreateContext(cl_props, ngpus, opencl_devices, NULL, NULL, &clErr);
+
+    if (clErr != CL_SUCCESS) {
+        printf("opencl_init: Could not create context.\n");
+        exit(-1);
+    }
+
     int d;
     for (d = 0; d < ngpus; ++d) {
         opencl_device_id_t = d;
 
-        cl_props[1] = (cl_context_properties) clPlatform;
-
-
-        opencl_contexts[opencl_device_id_t] = clCreateContext(cl_props, all,
-                                          opencl_devices, NULL, NULL, &clErr);
-
-        if (clErr != CL_SUCCESS) {
-            printf("opencl_init: Could not create context.\n");
-            return;
-        }
-
-        opencl_queues[opencl_device_id_t] = clCreateCommandQueue(opencl_contexts[opencl_device_id_t],
+        opencl_queues[opencl_device_id_t] = clCreateCommandQueue(opencl_context,
                                                                  opencl_devices[opencl_device_id_t], CL_FALSE, &clErr);
 
         if (clErr != CL_SUCCESS) {
             printf("opencl_init: Could not create queue.\n");
-            return;
+            exit(-1);
         }
 
         cl_native_double_width_s[opencl_device_id_t] = 0;
@@ -705,12 +704,11 @@ void opencl_deinit(int *gpus, int ngpus)
         clReleaseCommandQueue(opencl_queues[opencl_device_id_t]);
 
         free(cl_props);
-        clReleaseContext(opencl_contexts[opencl_device_id_t]);
+        clReleaseContext(opencl_context);
     }
 
     free(opencl_queues);
     free(opencl_devices);
-    free(opencl_contexts);
 
     free(cl_native_double_width_s);
     free(cl_native_max_group_size_s);
@@ -746,6 +744,7 @@ void opencl_kernel(cl_kernel kernel, const dim2 globalItemSize, const int argc, 
             printf("opencl_kernel %s could not set kernel argument. error: %s\n", kernelName, clCheckError(clErr));
 
             free(kernelName);
+            exit(-1);
         }
     }
 
@@ -785,6 +784,7 @@ void opencl_kernel(cl_kernel kernel, const dim2 globalItemSize, const int argc, 
         printf("opencl %s error: %s\n", kernelName, clCheckError(clErr));
 
         free(kernelName);
+        exit(-1);
     }
 #ifdef DEBUG_KERNELS
     else {
@@ -869,7 +869,7 @@ cl_mem_ext opencl_make_array(float *x, size_t n)
     buf.ptr = x;
 
     cl_int clErr;
-    buf.org = clCreateBuffer(opencl_contexts[opencl_device_id_t], CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR | CL_MEM_COPY_HOST_PTR,
+    buf.org = clCreateBuffer(opencl_context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR | CL_MEM_COPY_HOST_PTR,
                              buf.len * buf.obs, buf.ptr, &clErr);
     if (clErr != CL_SUCCESS)
         printf("could create buffer on device. error: %s\n", clCheckError(clErr));
@@ -898,7 +898,7 @@ cl_mem_ext opencl_make_int_array(int *x, size_t n)
     buf.ptr = x;
 
     cl_int clErr;
-    buf.org = clCreateBuffer(opencl_contexts[opencl_device_id_t], CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR | CL_MEM_COPY_HOST_PTR,
+    buf.org = clCreateBuffer(opencl_context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR | CL_MEM_COPY_HOST_PTR,
                              buf.len * buf.obs, buf.ptr, &clErr);
     if (clErr != CL_SUCCESS)
         printf("could create buffer on device. error: %s\n", clCheckError(clErr));
