@@ -417,44 +417,36 @@ void l2normalize_gpu(cl_mem_ext x, cl_mem_ext dx, int batch, int filters, int sp
 
 void fast_mean_gpu(cl_mem_ext x, int batch, int filters, int spatial, cl_mem_ext mean)
 {
-    fill_gpu(filters, 0, mean, 1);
-
-    int threads = ((MIN(cl_native_max_group_size_s[opencl_device_id_t], 256) - 1) / filters) + 1;
+    int threads = MIN(filters, ((MIN(cl_native_max_group_size_s[opencl_device_id_t], 256) - 1) / filters) + 1);
     dim2 dimGrid;
-    dimGrid = dim2_create(threads, filters);
+    dimGrid = dim2_create(filters, 1);
 
     opencl_kernel(opencl_fast_mean_kernel[opencl_device_id_t], dimGrid, 12, &threads, sizeof(cl_int), &x.mem, sizeof(cl_mem), &batch, sizeof(cl_int), &filters, sizeof(cl_int), &spatial, sizeof(cl_int), &mean.mem, sizeof(cl_mem));
 }
 
 void fast_variance_gpu(cl_mem_ext x, cl_mem_ext mean, int batch, int filters, int spatial, cl_mem_ext variance)
 {
-    fill_gpu(filters, 0, variance, 1);
-
-    int threads = ((MIN(cl_native_max_group_size_s[opencl_device_id_t], 256) - 1) / filters) + 1;
+    int threads = MIN(filters, ((MIN(cl_native_max_group_size_s[opencl_device_id_t], 256) - 1) / filters) + 1);
     dim2 dimGrid;
-    dimGrid = dim2_create(threads, filters);
+    dimGrid = dim2_create(filters, 1);
 
     opencl_kernel(opencl_fast_variance_kernel[opencl_device_id_t], dimGrid, 14, &threads, sizeof(cl_int), &x.mem, sizeof(cl_mem), &mean.mem, sizeof(cl_mem), &batch, sizeof(cl_int), &filters, sizeof(cl_int), &spatial, sizeof(cl_int), &variance.mem, sizeof(cl_mem));
 }
 
 void fast_mean_delta_gpu(cl_mem_ext delta, cl_mem_ext variance, int batch, int filters, int spatial, cl_mem_ext mean_delta)
 {
-    fill_gpu(filters, 0, mean_delta, 1);
-
-    int threads = ((MIN(cl_native_max_group_size_s[opencl_device_id_t], 256) - 1) / filters) + 1;
+    int threads = MIN(filters, ((MIN(cl_native_max_group_size_s[opencl_device_id_t], 256) - 1) / filters) + 1);
     dim2 dimGrid;
-    dimGrid = dim2_create(threads, filters);
+    dimGrid = dim2_create(filters, 1);
 
     opencl_kernel(opencl_fast_mean_delta_kernel[opencl_device_id_t], dimGrid, 14, &threads, sizeof(cl_int), &delta.mem, sizeof(cl_mem), &variance.mem, sizeof(cl_mem), &batch, sizeof(cl_int), &filters, sizeof(cl_int), &spatial, sizeof(cl_int), &mean_delta.mem, sizeof(cl_mem));
 }
 
 void fast_variance_delta_gpu(cl_mem_ext x, cl_mem_ext delta, cl_mem_ext mean, cl_mem_ext variance, int batch, int filters, int spatial, cl_mem_ext variance_delta)
 {
-    fill_gpu(filters, 0, variance_delta, 1);
-
-    int threads = ((MIN(cl_native_max_group_size_s[opencl_device_id_t], 256) - 1) / filters) + 1;
+    int threads = MIN(filters, ((MIN(cl_native_max_group_size_s[opencl_device_id_t], 256) - 1) / filters) + 1);
     dim2 dimGrid;
-    dimGrid = dim2_create(threads, filters);
+    dimGrid = dim2_create(filters, 1);
 
     opencl_kernel(opencl_fast_variance_delta_kernel[opencl_device_id_t], dimGrid, 18, &threads, sizeof(cl_int), &x.mem, sizeof(cl_mem), &delta.mem, sizeof(cl_mem), &mean.mem, sizeof(cl_mem), &variance.mem, sizeof(cl_mem), &batch, sizeof(cl_int), &filters, sizeof(cl_int), &spatial, sizeof(cl_int), &variance_delta.mem, sizeof(cl_mem));
 }

@@ -37,19 +37,6 @@ __kernel void test_kernel(int N, __global float *input, __global float *output, 
 }
 
 
-/*
-void scale_bias(float *output, float *biases, int batch, int n, int size)
-{
-    int i,j,b;
-    for(b = 0; b < batch; ++b){
-        for(i = 0; i < n; ++i){
-            for(j = 0; j < size; ++j){
-                output[(b*n + i)*size + j] *= biases[i];
-            }
-        }
-    }
-}
-*/
 __kernel void scale_bias_kernel(int N, __global float *output, __global float *biases, int batch, int n, int size)
 {
     int id = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
@@ -64,22 +51,6 @@ __kernel void scale_bias_kernel(int N, __global float *output, __global float *b
 }
 
 
-/*
-void backward_scale_cpu(float *x_norm, float *delta, int batch, int n, int size, float *scale_updates)
-{
-    int i,b,f;
-    for(f = 0; f < n; ++f){
-        float sum = 0;
-        for(b = 0; b < batch; ++b){
-            for(i = 0; i < size; ++i){
-                int index = i + size*(f + n*b);
-                sum += delta[index] * x_norm[index];
-            }
-        }
-        scale_updates[f] += sum;
-    }
-}
-*/
 __kernel void backward_scale_kernel(int N, __global float *x_norm, __global float *delta, int batch, int n, int size, __global float *scale_updates)
 {
     int id = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
@@ -92,35 +63,8 @@ __kernel void backward_scale_kernel(int N, __global float *x_norm, __global floa
     int index = i + size*(f + n*b);
     scale_updates[f] += delta[index] * x_norm[index];
 }
-/*
-__kernel void backward_scale_kernel(int threads, __global float *x_norm, __global float *delta, int batch, int n, int size, __global float *scale_updates)
-{
-    int i = get_global_id(1);
-    int t = get_global_id(0);
-    int j, k;
-    for(j = 0; j < n; ++j){
-        for(k = 0; k < size; k += threads){
-            int index = size*(i + batch*j) + k+t;
-            scale_updates[j] += (k+t < size) ? delta[index]*x_norm[index] : 0;
-        }
-    }
-}
-*/
 
 
-/*
-void add_bias(float *output, float *biases, int batch, int n, int size)
-{
-    int i,j,b;
-    for(b = 0; b < batch; ++b){
-        for(i = 0; i < n; ++i){
-            for(j = 0; j < size; ++j){
-                output[(b*n + i)*size + j] += biases[i];
-            }
-        }
-    }
-}
-*/
 __kernel void add_bias_kernel(int N, __global float *output, __global float *biases, int batch, int n, int size)
 {
     int id = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
@@ -134,25 +78,6 @@ __kernel void add_bias_kernel(int N, __global float *output, __global float *bia
     output[(b*n + i)*size + j] += biases[i];
 }
 
-/*
-float sum_array(float *a, int n)
-{
-    int i;
-    float sum = 0;
-    for(i = 0; i < n; ++i) sum += a[i];
-    return sum;
-}
-
-void backward_bias(float *bias_updates, float *delta, int batch, int n, int size)
-{
-    int i,b;
-    for(b = 0; b < batch; ++b){
-        for(i = 0; i < n; ++i){
-            bias_updates[i] += sum_array(delta+size*(i+b*n), size);
-        }
-    }
-}
-*/
 __kernel void backward_bias_kernel(int N, __global float *bias_updates, __global float *delta, int batch, int n, int size)
 {
     int id = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
@@ -166,39 +91,8 @@ __kernel void backward_bias_kernel(int N, __global float *bias_updates, __global
     int index = j + i*size + b*n*size;
     bias_updates[i] += delta[index];
 }
-/*
-__kernel void backward_bias_kernel(int threads, __global float *bias_updates, __global float *delta, int batch, int n, int size)
-{
-    int i = get_global_id(1);
-    int t = get_global_id(0);
-    int j, k;
-    for(j = 0; j < n; ++j){
-        for(k = 0; k < size; k += threads){
-            int index = size*(i + batch*j) + k+t;
-            bias_updates[j] += (k+t < size) ? delta[index] : 0;
-        }
-    }
-}
-*/
 
 
-/*
-void mean_cpu(float *x, int batch, int filters, int spatial, float *mean)
-{
-    float scale = 1./(batch * spatial);
-    int i,j,k;
-    for(i = 0; i < filters; ++i){
-        mean[i] = 0;
-        for(j = 0; j < batch; ++j){
-            for(k = 0; k < spatial; ++k){
-                int index = j*filters*spatial + i*spatial + k;
-                mean[i] += x[index];
-            }
-        }
-        mean[i] *= scale;
-    }
-}
-*/
 __kernel void  mean_kernel(int N, __global float *x, int batch, int filters, int spatial, __global float *mean)
 {
     float scale = 1.f/(batch * spatial);
@@ -219,23 +113,6 @@ __kernel void  mean_kernel(int N, __global float *x, int batch, int filters, int
 }
 
 
-/*
-void variance_cpu(float *x, float *mean, int batch, int filters, int spatial, float *variance)
-{
-    float scale = 1./(batch * spatial - 1);
-    int i,j,k;
-    for(i = 0; i < filters; ++i){
-        variance[i] = 0;
-        for(j = 0; j < batch; ++j){
-            for(k = 0; k < spatial; ++k){
-                int index = j*filters*spatial + i*spatial + k;
-                variance[i] += pow((x[index] - mean[i]), 2);
-            }
-        }
-        variance[i] *= scale;
-    }
-}
-*/
 __kernel void variance_kernel(int N, __global float *x, __global float *mean, int batch, int filters, int spatial, __global float *variance)
 {
     float scale = 1.f/(batch * spatial - 1);
@@ -256,23 +133,6 @@ __kernel void variance_kernel(int N, __global float *x, __global float *mean, in
 }
 
 
-/*
-void mean_delta_cpu(float *delta, float *variance, int batch, int filters, int spatial, float *mean_delta)
-{
-
-    int i,j,k;
-    for(i = 0; i < filters; ++i){
-        mean_delta[i] = 0;
-        for (j = 0; j < batch; ++j) {
-            for (k = 0; k < spatial; ++k) {
-                int index = j*filters*spatial + i*spatial + k;
-                mean_delta[i] += delta[index];
-            }
-        }
-        mean_delta[i] *= (-1./ sqrtf(variance[i] + .00001f));
-    }
-}
-*/
 __kernel void mean_delta_kernel(int N, __global float *delta, __global float *variance, int batch, int filters, int spatial, __global float *mean_delta) {
     int id = (get_group_id(0) + get_group_id(1) * get_num_groups(0)) * get_local_size(0) + get_local_id(0);
     if (id >= N) return;
@@ -291,22 +151,6 @@ __kernel void mean_delta_kernel(int N, __global float *delta, __global float *va
 }
 
 
-/*
-void  variance_delta_cpu(float *x, float *delta, float *mean, float *variance, int batch, int filters, int spatial, float *variance_delta)
-{
-    int i,j,k;
-    for(i = 0; i < filters; ++i){
-        variance_delta[i] = 0;
-        for(j = 0; j < batch; ++j){
-            for(k = 0; k < spatial; ++k){
-                int index = j*filters*spatial + i*spatial + k;
-                variance_delta[i] += delta[index]*(x[index] - mean[i]);
-            }
-        }
-        variance_delta[i] *= -.5 * powf(variance[i] + .00001f, (float)(-3./2.));
-    }
-}
-*/
 __kernel void variance_delta_kernel(int N, __global float *x, __global float *delta, __global float *mean, __global float *variance, int batch, int filters, int spatial, __global float *variance_delta) {
     int id = (get_group_id(0) + get_group_id(1) * get_num_groups(0)) * get_local_size(0) + get_local_id(0);
     if (id >= N) return;
@@ -338,11 +182,11 @@ __kernel void accumulate_kernel(__global float *x, int n, int groups, __global f
 
 __kernel void fast_mean_kernel(__const int threads, __global float *x, int batch, int filters, int spatial, __global float *mean)
 {
-    int i = get_global_id(1);
-    int t = get_global_id(0);
-    // done by fill_gpu before this kernel
-    //if (t == 0) mean[i] = 0;
-    //barrier( CLK_GLOBAL_MEM_FENCE);
+    float scale = 1.f/(batch * spatial);
+    int i = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
+    int t = get_global_id(1);
+    if (t == 0) mean[i] = 0;
+    barrier( CLK_GLOBAL_MEM_FENCE);
     int j, k;
     for(j = 0; j < batch; ++j){
         for(k = 0; k < spatial; k += threads){
@@ -351,17 +195,18 @@ __kernel void fast_mean_kernel(__const int threads, __global float *x, int batch
         }
     }
     barrier( CLK_GLOBAL_MEM_FENCE);
-    if(t == 0) mean[i] *= 1.f/(batch * spatial);
+    if(t == 0) mean[i] *= scale;
 }
 
 
 __kernel void fast_variance_kernel(__const int threads, __global float *x, __global float *mean, int batch, int filters, int spatial, __global float *variance)
 {
-    int t = get_global_id(0);
-    int i = get_global_id(1);
-    // done by fill_gpu before this kernel
-    //if (t == 0) variance[i] = 0;
-    //barrier( CLK_GLOBAL_MEM_FENCE);
+    float scale = 1.f/(batch * spatial - 1);
+
+    int i = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
+    int t = get_global_id(1);
+    if (t == 0) variance[i] = 0;
+    barrier( CLK_GLOBAL_MEM_FENCE);
     int j, k;
     for(j = 0; j < batch; ++j){
         for(k = 0; k < spatial; k += threads){
@@ -370,17 +215,16 @@ __kernel void fast_variance_kernel(__const int threads, __global float *x, __glo
         }
     }
     barrier( CLK_GLOBAL_MEM_FENCE);
-    if(t == 0) variance[i] *= 1.f/(batch * spatial - 1);
+    if(t == 0) variance[i] *= scale;
 }
 
 
  __kernel void fast_mean_delta_kernel(__const int threads, __global float *delta, __global float *variance, int batch, int filters, int spatial, __global float *mean_delta)
 {
-    int t = get_global_id(0);
-    int i = get_global_id(1);
-    // done by fill_gpu before this kernel
-    //if (t == 0) mean_delta[i] = 0;
-    //barrier( CLK_GLOBAL_MEM_FENCE);
+    int i = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
+    int t = get_global_id(1);
+    if (t == 0) mean_delta[i] = 0;
+    barrier( CLK_GLOBAL_MEM_FENCE);
     int j, k;
     for(j = 0; j < batch; ++j){
         for(k = 0; k < spatial; k += threads){
@@ -395,11 +239,10 @@ __kernel void fast_variance_kernel(__const int threads, __global float *x, __glo
 
 __kernel void fast_variance_delta_kernel(__const int threads, __global float *x, __global float *delta, __global float *mean, __global float *variance, int batch, int filters, int spatial, __global float *variance_delta)
 {
-    int t = get_global_id(0);
-    int i = get_global_id(1);
-    // done by fill_gpu before this kernel
-    //if (t == 0) variance_delta[i] = 0;
-    //barrier( CLK_GLOBAL_MEM_FENCE);
+    int i = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
+    int t = get_global_id(1);
+    if (t == 0) variance_delta[i] = 0;
+    barrier( CLK_GLOBAL_MEM_FENCE);
     int j, k;
     for(j = 0; j < batch; ++j){
         for(k = 0; k < spatial; k += threads){
@@ -421,20 +264,6 @@ __kernel void adam_kernel(int N, __global float *x, __global float *m, __global 
 }
 
 
-/*
-void normalize_cpu(float *x, float *mean, float *variance, int batch, int filters, int spatial)
-{
-    int b, f, i;
-    for(b = 0; b < batch; ++b){
-        for(f = 0; f < filters; ++f){
-            for(i = 0; i < spatial; ++i){
-                int index = b*filters*spatial + f*spatial + i;
-                x[index] = (x[index] - mean[f])/(sqrtf(variance[f] + .000001f)));
-            }
-        }
-    }
-}
-*/
 __kernel void normalize_kernel(int N, __global float *x, __global float *mean, __global float *variance, int batch, int filters, int spatial)
 {
     int id = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
@@ -449,20 +278,7 @@ __kernel void normalize_kernel(int N, __global float *x, __global float *mean, _
 }
 
 
-/*
-void normalize_delta_cpu(float *x, float *mean, float *variance, float *mean_delta, float *variance_delta, int batch, int filters, int spatial, float *delta)
-{
-    int f, j, k;
-    for(j = 0; j < batch; ++j){
-        for(f = 0; f < filters; ++f){
-            for(k = 0; k < spatial; ++k){
-                int index = j*filters*spatial + f*spatial + k;
-                delta[index] = delta[index] * 1./(sqrtf(variance[f] + .00001f)) + variance_delta[f] * 2. * (x[index] - mean[f]) / (spatial * batch) + mean_delta[f]/(spatial*batch);
-            }
-        }
-    }
-}
-*/
+
 __kernel void normalize_delta_kernel(int N, __global float *x, __global float *mean, __global float *variance, __global float *mean_delta, __global float *variance_delta, int batch, int filters, int spatial, __global float *delta)
 {
     int id = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
@@ -477,27 +293,6 @@ __kernel void normalize_delta_kernel(int N, __global float *x, __global float *m
 }
 
 
-/*
-void l2normalize_cpu(float *x, float *dx, int batch, int filters, int spatial)
-{
-    int b,f,i;
-    for(b = 0; b < batch; ++b){
-        for(i = 0; i < spatial; ++i){
-            float sum = 0;
-            for(f = 0; f < filters; ++f){
-                int index = b*filters*spatial + f*spatial + i;
-                sum += powf(x[index], 2);
-            }
-            sum = sqrtf(sum);
-            for(f = 0; f < filters; ++f){
-                int index = b*filters*spatial + f*spatial + i;
-                x[index] /= sum;
-                dx[index] = (1 - x[index]) / sum;
-            }
-        }
-    }
-}
-*/
 __kernel void l2norm_kernel(int N, __global float *x, __global float *dx, int batch, int filters, int spatial)
 {
     int index = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
@@ -703,9 +498,7 @@ __kernel void logistic_x_ent_kernel(int n, __global float *pred, __global float 
     if(i < n){
         float t = truth[i];
         float p = pred[i];
-        float s = log(p);
-        float q = log(1.f-p);
-        error[i] = -t*s - (1.f-t)*q;
+        error[i] = -t*log(p+.0000001f) - (1.f-t)*log(1.f-p+.0000001f);
         delta[i] = t-p;
     }
 }
