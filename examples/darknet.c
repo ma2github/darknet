@@ -14,6 +14,7 @@ extern void run_nightmare(int argc, char **argv);
 extern void run_classifier(int argc, char **argv);
 extern void run_regressor(int argc, char **argv);
 extern void run_segmenter(int argc, char **argv);
+extern void run_isegmenter(int argc, char **argv);
 extern void run_char_rnn(int argc, char **argv);
 extern void run_tag(int argc, char **argv);
 extern void run_cifar(int argc, char **argv);
@@ -413,12 +414,22 @@ int main(int argc, char **argv)
     if(find_arg(argc, argv, "-nogpu")) {
         gpu_index = -1;
     }
+    char *gpu_list = read_char_arg(argc, argv, "-gpus", *argv);
+    int ngpus;
+    int *gpus = read_intlist(gpu_list, &ngpus, gpu_index);
+
+    if (ngpus == 1 || gpu_index < 0) {
+        gpus[0] = gpu_index;
+    }
 
 #ifndef GPU
     gpu_index = -1;
 #else
-    if(gpu_index >= 0){
-        cuda_set_device(gpu_index);
+    if (gpu_index >= 0) {
+        gpusg = gpus;
+        ngpusg = ngpus;
+        gpu_index = gpus[0];
+        opencl_init(gpus, ngpus);
     }
 #endif
 
@@ -452,6 +463,8 @@ int main(int argc, char **argv)
         run_classifier(argc, argv);
     } else if (0 == strcmp(argv[1], "regressor")){
         run_regressor(argc, argv);
+    } else if (0 == strcmp(argv[1], "isegmenter")){
+        run_isegmenter(argc, argv);
     } else if (0 == strcmp(argv[1], "segmenter")){
         run_segmenter(argc, argv);
     } else if (0 == strcmp(argv[1], "art")){
@@ -462,8 +475,6 @@ int main(int argc, char **argv)
         composite_3d(argv[2], argv[3], argv[4], (argc > 5) ? atof(argv[5]) : 0);
     } else if (0 == strcmp(argv[1], "test")){
         test_resize(argv[2]);
-    } else if (0 == strcmp(argv[1], "captcha")){
-        run_captcha(argc, argv);
     } else if (0 == strcmp(argv[1], "nightmare")){
         run_nightmare(argc, argv);
     } else if (0 == strcmp(argv[1], "rgbgr")){
@@ -501,6 +512,11 @@ int main(int argc, char **argv)
     } else {
         fprintf(stderr, "Not an option: %s\n", argv[1]);
     }
+#ifdef GPU
+    if (gpu_index >= 0) {
+        opencl_deinit(gpus, ngpus);
+    }
+    free(gpus);
+#endif
     return 0;
 }
-

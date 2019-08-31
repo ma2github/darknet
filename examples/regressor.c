@@ -17,9 +17,14 @@ void train_regressor(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
     for(i = 0; i < ngpus; ++i){
         srand(seed);
 #ifdef GPU
-        cuda_set_device(gpus[i]);
+        if(gpu_index >= 0){
+            opencl_set_device(gpus[i]);
+        }
 #endif
         nets[i] = load_network(cfgfile, weightfile, clear);
+#ifdef GPU
+        nets[i]->gpu_index = gpus[i];
+#endif
         nets[i]->learning_rate *= ngpus;
     }
     srand(time(0));
@@ -79,10 +84,15 @@ void train_regressor(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
 
         float loss = 0;
 #ifdef GPU
-        if(ngpus == 1){
+        if (gpu_index >= 0) {
+            if (ngpus == 1) {
+                loss = train_network(net, train);
+            } else {
+                loss = train_networks(nets, ngpus, train, 4, gpus, ngpus);
+            }
+        }
+        else {
             loss = train_network(net, train);
-        } else {
-            loss = train_networks(nets, ngpus, train, 4);
         }
 #else
         loss = train_network(net, train);
@@ -133,7 +143,8 @@ void predict_regressor(char *cfgfile, char *weightfile, char *filename)
             strtok(input, "\n");
         }
         image im = load_image_color(input, 0, 0);
-        image sized = letterbox_image(im, net->w, net->h);
+        int resize = im.w != net->w || im.h != net->h;
+        image sized = resize ? letterbox_image(im, net->w, net->h) : im;
 
         float *X = sized.data;
         time=clock();
@@ -141,7 +152,7 @@ void predict_regressor(char *cfgfile, char *weightfile, char *filename)
         printf("Predicted: %f\n", predictions[0]);
         printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
         free_image(im);
-        free_image(sized);
+        if (resize) free_image(sized);
         if (filename) break;
     }
 }
@@ -179,7 +190,6 @@ void demo_regressor(char *datacfg, char *cfgfile, char *weightfile, int cam_inde
         image in = get_image_from_stream(cap);
         image crop = center_crop_image(in, net->w, net->h);
         grayscale_image_3c(crop);
-        show_image(crop, "Regressor");
 
         float *predictions = network_predict(net, crop.data);
 
@@ -192,10 +202,9 @@ void demo_regressor(char *datacfg, char *cfgfile, char *weightfile, int cam_inde
             printf("%s: %f\n", names[i], predictions[i]);
         }
 
+        show_image(crop, "Regressor", 10);
         free_image(in);
         free_image(crop);
-
-        cvWaitKey(10);
 
         gettimeofday(&tval_after, NULL);
         timersub(&tval_after, &tval_before, &tval_result);

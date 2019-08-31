@@ -1,7 +1,7 @@
 #include "image.h"
 #include "utils.h"
 #include "blas.h"
-#include "cuda.h"
+#include "opencl.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -224,7 +224,7 @@ image **load_alphabet()
 {
     int i, j;
     const int nsize = 8;
-    image **alphabets = calloc(nsize, sizeof(image));
+    image **alphabets = calloc(nsize, sizeof(image*));
     for(j = 0; j < nsize; ++j){
         alphabets[j] = calloc(128, sizeof(image));
         for(i = 32; i < 127; ++i){
@@ -236,15 +236,21 @@ image **load_alphabet()
     return alphabets;
 }
 
-void draw_detections(image im, detection *dets, int num, float thresh, char **names, image **alphabet, int classes)
+pthread_mutex_t dd_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void draw_detections(image im, detection *dets, int num, float thresh, char **names, image **alphabet, int classes, float fps)
 {
     int i,j;
+    char percent[5];
+    char lfps[5];
 
-    for(i = 0; i < num; ++i){
+    pthread_mutex_lock(&dd_mutex);
+
+    for(i = 0; i < num; ++i) {
         char labelstr[4096] = {0};
         int class = -1;
-        for(j = 0; j < classes; ++j){
-            if (dets[i].prob[j] > thresh){
+        for (j = 0; j < classes; ++j) {
+            if (dets[i].prob[j] > thresh) {
                 if (class < 0) {
                     strcat(labelstr, names[j]);
                     class = j;
@@ -252,11 +258,17 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
                     strcat(labelstr, ", ");
                     strcat(labelstr, names[j]);
                 }
-                printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
+                //TODO: CHANGE!!!
+                //printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
+                strcat(labelstr, " ");
+                gcvt(dets[i].prob[j] * 100, 5, percent);
+                strcat(labelstr, percent);
             }
         }
-        if(class >= 0){
-            int width = im.h * .006;
+
+        if(class >= 0) {
+
+            int width = im.h * .004;
 
             /*
                if(0){
@@ -266,10 +278,10 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
              */
 
             //printf("%d %s: %.0f%%\n", i, names[class], prob*100);
-            int offset = class*123457 % classes;
-            float red = get_color(2,offset,classes);
-            float green = get_color(1,offset,classes);
-            float blue = get_color(0,offset,classes);
+            int offset = class * 123457 % classes;
+            float red = get_color(2, offset, classes);
+            float green = get_color(1, offset, classes);
+            float blue = get_color(0, offset, classes);
             float rgb[3];
 
             //width = prob*20+2;
@@ -280,25 +292,25 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
             box b = dets[i].bbox;
             //printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
 
-            int left  = (b.x-b.w/2.)*im.w;
-            int right = (b.x+b.w/2.)*im.w;
-            int top   = (b.y-b.h/2.)*im.h;
-            int bot   = (b.y+b.h/2.)*im.h;
+            int left = (b.x - b.w / 2.) * im.w;
+            int right = (b.x + b.w / 2.) * im.w;
+            int top = (b.y - b.h / 2.) * im.h;
+            int bot = (b.y + b.h / 2.) * im.h;
 
-            if(left < 0) left = 0;
-            if(right > im.w-1) right = im.w-1;
-            if(top < 0) top = 0;
-            if(bot > im.h-1) bot = im.h-1;
+            if (left < 0) left = 0;
+            if (right > im.w - 1) right = im.w - 1;
+            if (top < 0) top = 0;
+            if (bot > im.h - 1) bot = im.h - 1;
 
             draw_box_width(im, left, top, right, bot, width, red, green, blue);
             if (alphabet) {
-                image label = get_label(alphabet, labelstr, (im.h*.03));
+                image label = get_label(alphabet, labelstr, (im.h * .02));
                 draw_label(im, top + width, left, label, rgb);
                 free_image(label);
             }
-            if (dets[i].mask){
+            if (dets[i].mask) {
                 image mask = float_to_image(14, 14, 1, dets[i].mask);
-                image resized_mask = resize_image(mask, b.w*im.w, b.h*im.h);
+                image resized_mask = resize_image(mask, b.w * im.w, b.h * im.h);
                 image tmask = threshold_image(resized_mask, .5);
                 embed_image(tmask, im, left, top);
                 free_image(mask);
@@ -306,7 +318,23 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
                 free_image(tmask);
             }
         }
+
+        int offset = 0;
+        float red = get_color(2, offset, classes);
+        float green = get_color(1, offset, classes);
+        float blue = get_color(0, offset, classes);
+        float rgb[3];
+        rgb[0] = red;
+        rgb[1] = green;
+        rgb[2] = blue;
+        if (i == 0 && fps != 0) {
+            image ilfps = get_label(alphabet, gcvt(fps, 5, lfps), (im.h * .03));
+            draw_label(im, 0, 0, ilfps, rgb);
+            free_image(ilfps);
+        }
     }
+
+    pthread_mutex_unlock(&dd_mutex);
 }
 
 void transpose_image(image im)
@@ -572,7 +600,7 @@ void show_image_cv(image p, const char *name, IplImage *disp)
 }
 #endif
 
-void show_image(image p, const char *name)
+int show_image(image p, const char *name, int ms)
 {
 #ifdef OPENCV
     IplImage *disp = cvCreateImage(cvSize(p.w,p.h), IPL_DEPTH_8U, p.c);
@@ -581,13 +609,33 @@ void show_image(image p, const char *name)
     show_image_cv(copy, name, disp);
     free_image(copy);
     cvReleaseImage(&disp);
+    int c = cvWaitKey(ms);
+    if (c != -1) c = c%256;
+    return c;
 #else
     fprintf(stderr, "Not compiled with OpenCV, saving to %s.png instead\n", name);
     save_image(p, name);
+    return 0;
 #endif
 }
 
 #ifdef OPENCV
+
+void image_into_ipl(image im, IplImage *dst)
+{
+    int x,y,k;
+    if(im.c == 3) rgbgr_image(im);
+
+    int step = dst->widthStep;
+
+    for(y = 0; y < im.h; ++y){
+        for(x = 0; x < im.w; ++x){
+            for(k= 0; k < im.c; ++k){
+                dst->imageData[y*step + x*im.c + k] = (unsigned char)(get_pixel(im,x,y,k)*255);
+            }
+        }
+    }
+}
 
 void ipl_into_image(IplImage* src, image im)
 {
@@ -619,6 +667,10 @@ image ipl_to_image(IplImage* src)
 
 image load_image_cv(char *filename, int channels)
 {
+    //if (filename) filename[strcspn(filename, "\n\r")] = 0;
+    char *pos;
+    if ((pos=strchr(filename, '\r')) != NULL) *pos = '\0';
+    if ((pos=strchr(filename, '\n')) != NULL) *pos = '\0';
     IplImage* src = 0;
     int flag = -1;
     if (channels == 0) flag = -1;
@@ -631,9 +683,20 @@ image load_image_cv(char *filename, int channels)
     if( (src = cvLoadImage(filename, flag)) == 0 )
     {
         fprintf(stderr, "Cannot load image \"%s\"\n", filename);
-        char buff[256];
-        sprintf(buff, "echo %s >> bad.list", filename);
-        system(buff);
+
+        char buff[1024];
+        // Check the length of the buffer
+        if(strlen(filename) > 1024) {
+            sprintf(buff, "This filename is too long");
+        }
+        else {
+            sprintf(buff, "%s", filename);
+        }
+        // Write directly to the file rather than using the system call to write
+        FILE* bad_list = fopen("bad.list", "a");
+        fwrite(buff, sizeof(char), strlen(buff), bad_list);
+        fwrite("\n", 1, 1, bad_list);
+
         return make_image(10,10,3);
         //exit(0);
     }
@@ -727,7 +790,7 @@ void show_image_layers(image p, char *name)
     for(i = 0; i < p.c; ++i){
         sprintf(buff, "%s - Layer %d", name, i);
         image layer = get_image_layer(p, i);
-        show_image(layer, buff);
+        show_image(layer, buff, 1);
         free_image(layer);
     }
 }
@@ -735,7 +798,7 @@ void show_image_layers(image p, char *name)
 void show_image_collapsed(image p, char *name)
 {
     image c = collapse_image_layers(p, 1);
-    show_image(c, name);
+    show_image(c, name, 1);
     free_image(c);
 }
 
@@ -1406,16 +1469,16 @@ void test_resize(char *filename)
     distort_image(c4, .1, .66666, 1.5);
 
 
-    show_image(im,   "Original");
-    show_image(gray, "Gray");
-    show_image(c1, "C1");
-    show_image(c2, "C2");
-    show_image(c3, "C3");
-    show_image(c4, "C4");
+    show_image(im,   "Original", 1);
+    show_image(gray, "Gray", 1);
+    show_image(c1, "C1", 1);
+    show_image(c2, "C2", 1);
+    show_image(c3, "C3", 1);
+    show_image(c4, "C4", 1);
 #ifdef OPENCV
     while(1){
         image aug = random_augment_image(im, 0, .75, 320, 448, 320, 320);
-        show_image(aug, "aug");
+        show_image(aug, "aug", 1);
         free_image(aug);
 
 
@@ -1430,7 +1493,7 @@ void test_resize(char *filename)
         float dhue = rand_uniform(-hue, hue);
 
         distort_image(c, dhue, dsat, dexp);
-        show_image(c, "rand");
+        show_image(c, "rand", 1);
         printf("%f %f %f\n", dhue, dsat, dexp);
         free_image(c);
         cvWaitKey(0);
@@ -1441,6 +1504,10 @@ void test_resize(char *filename)
 
 image load_image_stb(char *filename, int channels)
 {
+    //if (filename) filename[strcspn(filename, "\n\r")] = 0;
+    char *pos;
+    if ((pos=strchr(filename, '\r')) != NULL) *pos = '\0';
+    if ((pos=strchr(filename, '\n')) != NULL) *pos = '\0';
     int w, h, c;
     unsigned char *data = stbi_load(filename, &w, &h, &c, channels);
     if (!data) {
@@ -1585,7 +1652,7 @@ void show_image_normalized(image im, const char *name)
 {
     image c = copy_image(im);
     normalize_image(c);
-    show_image(c, name);
+    show_image(c, name, 0);
     free_image(c);
 }
 
@@ -1603,7 +1670,7 @@ void show_images(image *ims, int n, char *window)
      */
     normalize_image(m);
     save_image(m, window);
-    show_image(m, window);
+    show_image(m, window, 1);
     free_image(m);
 }
 

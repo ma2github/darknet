@@ -9,7 +9,6 @@
 #include "activations.h"
 #include "avgpool_layer.h"
 #include "batchnorm_layer.h"
-#include "blas.h"
 #include "connected_layer.h"
 #include "deconvolutional_layer.h"
 #include "convolutional_layer.h"
@@ -24,9 +23,9 @@
 #include "maxpool_layer.h"
 #include "normalization_layer.h"
 #include "option_list.h"
-#include "parser.h"
 #include "region_layer.h"
 #include "yolo_layer.h"
+#include "iseg_layer.h"
 #include "reorg_layer.h"
 #include "rnn_layer.h"
 #include "route_layer.h"
@@ -52,6 +51,7 @@ LAYER_TYPE string_to_layer_type(char * type)
     if (strcmp(type, "[detection]")==0) return DETECTION;
     if (strcmp(type, "[region]")==0) return REGION;
     if (strcmp(type, "[yolo]")==0) return YOLO;
+    if (strcmp(type, "[iseg]")==0) return ISEG;
     if (strcmp(type, "[local]")==0) return LOCAL;
     if (strcmp(type, "[conv]")==0
             || strcmp(type, "[convolutional]")==0) return CONVOLUTIONAL;
@@ -265,25 +265,26 @@ layer parse_connected(list *options, size_params params)
     return l;
 }
 
-softmax_layer parse_softmax(list *options, size_params params)
+layer parse_softmax(list *options, size_params params)
 {
     int groups = option_find_int_quiet(options, "groups",1);
-    softmax_layer layer = make_softmax_layer(params.batch, params.inputs, groups);
-    layer.temperature = option_find_float_quiet(options, "temperature", 1);
+    layer l = make_softmax_layer(params.batch, params.inputs, groups);
+    l.temperature = option_find_float_quiet(options, "temperature", 1);
     char *tree_file = option_find_str(options, "tree", 0);
-    if (tree_file) layer.softmax_tree = read_tree(tree_file);
-    layer.w = params.w;
-    layer.h = params.h;
-    layer.c = params.c;
-    layer.spatial = option_find_float_quiet(options, "spatial", 0);
-    return layer;
+    if (tree_file) l.softmax_tree = read_tree(tree_file);
+    l.w = params.w;
+    l.h = params.h;
+    l.c = params.c;
+    l.spatial = (int) option_find_float_quiet(options, "spatial", 0);
+    l.noloss =  option_find_int_quiet(options, "noloss", 0);
+    return l;
 }
 
 int *parse_yolo_mask(char *a, int *num)
 {
     int *mask = 0;
     if(a){
-        int len = strlen(a);
+        int len = (int) strlen(a);
         int n = 1;
         int i;
         for(i = 0; i < len; ++i){
@@ -323,18 +324,27 @@ layer parse_yolo(list *options, size_params params)
 
     a = option_find_str(options, "anchors", 0);
     if(a){
-        int len = strlen(a);
+        int len = (int) strlen(a);
         int n = 1;
         int i;
         for(i = 0; i < len; ++i){
             if (a[i] == ',') ++n;
         }
         for(i = 0; i < n; ++i){
-            float bias = atof(a);
+            float bias = (float) atof(a);
             l.biases[i] = bias;
             a = strchr(a, ',')+1;
         }
     }
+    return l;
+}
+
+layer parse_iseg(list *options, size_params params)
+{
+    int classes = option_find_int(options, "classes", 20);
+    int ids = option_find_int(options, "ids", 32);
+    layer l = make_iseg_layer(params.batch, params.w, params.h, classes, ids);
+    assert(l.outputs == params.inputs);
     return l;
 }
 
@@ -375,14 +385,14 @@ layer parse_region(list *options, size_params params)
 
     char *a = option_find_str(options, "anchors", 0);
     if(a){
-        int len = strlen(a);
+        int len = (int) strlen(a);
         int n = 1;
         int i;
         for(i = 0; i < len; ++i){
             if (a[i] == ',') ++n;
         }
         for(i = 0; i < n; ++i){
-            float bias = atof(a);
+            float bias = (float) atof(a);
             l.biases[i] = bias;
             a = strchr(a, ',')+1;
         }
@@ -472,7 +482,7 @@ maxpool_layer parse_maxpool(list *options, size_params params)
 {
     int stride = option_find_int(options, "stride",1);
     int size = option_find_int(options, "size",stride);
-    int padding = option_find_int_quiet(options, "padding", (size-1)/2);
+    int padding = option_find_int_quiet(options, "padding", size-1);
 
     int batch,h,w,c;
     h = params.h;
@@ -589,7 +599,7 @@ layer parse_upsample(list *options, size_params params, network *net)
 route_layer parse_route(list *options, size_params params, network *net)
 {
     char *l = option_find(options, "layers");
-    int len = strlen(l);
+    int len = (int) strlen(l);
     if(!l) error("Route Layer must specify input layers");
     int n = 1;
     int i;
@@ -692,7 +702,7 @@ void parse_net_options(list *options, network *net)
         char *p = option_find(options, "scales");
         if(!l || !p) error("STEPS policy must have steps and scales in cfg file");
 
-        int len = strlen(l);
+        int len = (int) strlen(l);
         int n = 1;
         int i;
         for(i = 0; i < len; ++i){
@@ -702,7 +712,7 @@ void parse_net_options(list *options, network *net)
         float *scales = calloc(n, sizeof(float));
         for(i = 0; i < n; ++i){
             int step    = atoi(l);
-            float scale = atof(p);
+            float scale = (float) atof(p);
             l = strchr(l, ',')+1;
             p = strchr(p, ',')+1;
             steps[i] = step;
@@ -791,6 +801,8 @@ network *parse_network_cfg(char *filename)
             l = parse_region(options, params);
         }else if(lt == YOLO){
             l = parse_yolo(options, params);
+        }else if(lt == ISEG){
+            l = parse_iseg(options, params);
         }else if(lt == DETECTION){
             l = parse_detection(options, params);
         }else if(lt == SOFTMAX){
@@ -817,8 +829,10 @@ network *parse_network_cfg(char *filename)
             l.output = net->layers[count-1].output;
             l.delta = net->layers[count-1].delta;
 #ifdef GPU
-            l.output_gpu = net->layers[count-1].output_gpu;
-            l.delta_gpu = net->layers[count-1].delta_gpu;
+            if (gpu_index >= 0) {
+                l.output_gpu = net->layers[count-1].output_gpu;
+                l.delta_gpu = net->layers[count-1].delta_gpu;
+            }
 #endif
         }else{
             fprintf(stderr, "Type not recognized: %s\n", s->type);
@@ -829,6 +843,7 @@ network *parse_network_cfg(char *filename)
         l.stopbackward = option_find_int_quiet(options, "stopbackward", 0);
         l.dontsave = option_find_int_quiet(options, "dontsave", 0);
         l.dontload = option_find_int_quiet(options, "dontload", 0);
+        l.numload = option_find_int_quiet(options, "numload", 0);
         l.dontloadscales = option_find_int_quiet(options, "dontloadscales", 0);
         l.learning_rate_scale = option_find_float_quiet(options, "learning_rate", 1);
         l.smooth = option_find_float_quiet(options, "smooth", 0);
@@ -854,20 +869,23 @@ network *parse_network_cfg(char *filename)
     net->input = calloc(net->inputs*net->batch, sizeof(float));
     net->truth = calloc(net->truths*net->batch, sizeof(float));
 #ifdef GPU
-    net->output_gpu = out.output_gpu;
-    net->input_gpu = cuda_make_array(net->input, net->inputs*net->batch);
-    net->truth_gpu = cuda_make_array(net->truth, net->truths*net->batch);
+    if (gpu_index >= 0) {
+        net->output_gpu = out.output_gpu;
+        net->input_gpu = opencl_make_array(net->input, net->inputs * net->batch);
+        net->truth_gpu = opencl_make_array(net->truth, net->truths * net->batch);
+    }
 #endif
     if(workspace_size){
         //printf("%ld\n", workspace_size);
 #ifdef GPU
         if(gpu_index >= 0){
-            net->workspace = cuda_make_array(0, (workspace_size-1)/sizeof(float)+1);
+            net->workspace = calloc(workspace_size, sizeof(float));
+            net->workspace_gpu = opencl_make_array(net->workspace, workspace_size);
         }else {
-            net->workspace = calloc(1, workspace_size);
+            net->workspace = calloc(workspace_size, sizeof(float));
         }
 #else
-        net->workspace = calloc(1, workspace_size);
+        net->workspace = calloc(workspace_size, sizeof(float));
 #endif
     }
     return net;
@@ -933,7 +951,7 @@ void save_convolutional_weights_binary(layer l, FILE *fp)
             unsigned char c = 0;
             for(k = 0; k < 8; ++k){
                 if (j*8 + k >= size) break;
-                if (l.binary_weights[index + k] > 0) c = (c | 1<<k);
+                if (l.binary_weights[index + k] > 0) c = (unsigned char) (c | 1 << k);
             }
             fwrite(&c, sizeof(char), 1, fp);
         }
@@ -992,11 +1010,13 @@ void save_connected_weights(layer l, FILE *fp)
 void save_weights_upto(network *net, char *filename, int cutoff)
 {
 #ifdef GPU
-    if(net->gpu_index >= 0){
-        cuda_set_device(net->gpu_index);
+    if(gpu_index >= 0){
+        opencl_set_device(net->gpu_index);
     }
 #endif
+#if !defined(BENCHMARK) && !defined(LOSS_ONLY)
     fprintf(stderr, "Saving weights to %s\n", filename);
+#endif
     FILE *fp = fopen(filename, "wb");
     if(!fp) file_error(filename);
 
@@ -1006,7 +1026,11 @@ void save_weights_upto(network *net, char *filename, int cutoff)
     fwrite(&major, sizeof(int), 1, fp);
     fwrite(&minor, sizeof(int), 1, fp);
     fwrite(&revision, sizeof(int), 1, fp);
+#ifdef ARM
+    fwrite(net->seen, sizeof(unsigned long long), 1, fp); // 64-bit on ILP32 and LP64.
+#else
     fwrite(net->seen, sizeof(size_t), 1, fp);
+#endif
 
     int i;
     for(i = 0; i < net->n && i < cutoff; ++i){
@@ -1152,7 +1176,10 @@ void load_convolutional_weights(layer l, FILE *fp)
         //load_convolutional_weights_binary(l, fp);
         //return;
     }
-    int num = l.nweights;
+	//TODO: CHECK (3)!
+	//int num = l.nweights;
+    if(l.numload) l.n = l.numload;
+    int num = l.c/l.groups*l.n*l.size*l.size;
     fread(l.biases, sizeof(float), l.n, fp);
     if (l.batch_normalize && (!l.dontloadscales)){
         fread(l.scales, sizeof(float), l.n, fp);
@@ -1202,8 +1229,8 @@ void load_convolutional_weights(layer l, FILE *fp)
 void load_weights_upto(network *net, char *filename, int start, int cutoff)
 {
 #ifdef GPU
-    if(net->gpu_index >= 0){
-        cuda_set_device(net->gpu_index);
+    if(gpu_index >= 0){
+        opencl_set_device(net->gpu_index);
     }
 #endif
     fprintf(stderr, "Loading weights from %s...", filename);
@@ -1218,7 +1245,12 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
     fread(&minor, sizeof(int), 1, fp);
     fread(&revision, sizeof(int), 1, fp);
     if ((major*10 + minor) >= 2 && major < 1000 && minor < 1000){
+#ifdef ARM
+        //TODO: CHECK! (1)
+        fread(net->seen, sizeof(unsigned long long), 1, fp); // 64-bit on ILP32 and LP64.
+#else
         fread(net->seen, sizeof(size_t), 1, fp);
+#endif
     } else {
         int iseen = 0;
         fread(&iseen, sizeof(int), 1, fp);

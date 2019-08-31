@@ -13,7 +13,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
     float avg_loss = -1;
-    network **nets = calloc(ngpus, sizeof(network));
+    network **nets = calloc(ngpus, sizeof(network*));
 
     srand(time(0));
     int seed = rand();
@@ -21,16 +21,23 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     for(i = 0; i < ngpus; ++i){
         srand(seed);
 #ifdef GPU
-        cuda_set_device(gpus[i]);
+        if(gpu_index >= 0){
+            opencl_set_device(gpus[i]);
+        }
 #endif
         nets[i] = load_network(cfgfile, weightfile, clear);
+#ifdef GPU
+        nets[i]->gpu_index = gpus[i];
+#endif
         nets[i]->learning_rate *= ngpus;
     }
     srand(time(0));
     network *net = nets[0];
 
     int imgs = net->batch * net->subdivisions * ngpus;
+#ifndef BENCHMARK
     printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate, net->momentum, net->decay);
+#endif
     data train, buffer;
 
     layer l = net->layers[net->n - 1];
@@ -56,16 +63,39 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     args.threads = 64;
 
     pthread_t load_thread = load_data(args);
+#ifdef LOSS_ONLY
+    double time=what_time_is_it_now();
+#else
     double time;
+#endif
     int count = 0;
+
+    if(count == 0) {
+#ifdef GPU
+        if (gpu_index >= 0) {
+            if (ngpus != 1) sync_nets(nets, ngpus, 0);
+        }
+#endif
+        char buff[256];
+        sprintf(buff, "%s/%s.start.conv.weights", backup_directory, base);
+        save_weights(net, buff);
+    }
+
     //while(i*imgs < N*120){
     while(get_current_batch(net) < net->max_batches){
         if(l.random && count++%10 == 0){
+#if !defined(BENCHMARK) && !defined(LOSS_ONLY)
             printf("Resizing\n");
+#endif
             int dim = (rand() % 10 + 10) * 32;
+#ifdef BENCHMARK
+            dim = 608;
+#endif
             if (get_current_batch(net)+200 > net->max_batches) dim = 608;
             //int dim = (rand() % 4 + 16) * 32;
+#if !defined(BENCHMARK) && !defined(LOSS_ONLY)
             printf("%d\n", dim);
+#endif
             args.w = dim;
             args.h = dim;
 
@@ -80,7 +110,9 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             }
             net = nets[0];
         }
+#ifndef LOSS_ONLY
         time=what_time_is_it_now();
+#endif
         pthread_join(load_thread, 0);
         train = buffer;
         load_thread = load_data(args);
@@ -108,16 +140,23 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
            save_image(im, "truth11");
            }
          */
-
+#ifndef LOSS_ONLY
         printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
-
+#endif
+#ifndef LOSS_ONLY
         time=what_time_is_it_now();
+#endif
         float loss = 0;
 #ifdef GPU
-        if(ngpus == 1){
+        if (gpu_index >= 0) {
+            if (ngpus == 1) {
+                loss = train_network(net, train);
+            } else {
+                loss = train_networks(nets, ngpus, train, 4, gpus, ngpus);
+            }
+        }
+        else {
             loss = train_network(net, train);
-        } else {
-            loss = train_networks(nets, ngpus, train, 4);
         }
 #else
         loss = train_network(net, train);
@@ -126,10 +165,16 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
         avg_loss = avg_loss*.9 + loss*.1;
 
         i = get_current_batch(net);
+#ifdef LOSS_ONLY
+        printf("%lf\t%f\n", what_time_is_it_now()-time, loss);
+#else
         printf("%ld: %f, %f avg, %f rate, %lf seconds, %d images\n", get_current_batch(net), loss, avg_loss, get_current_rate(net), what_time_is_it_now()-time, i*imgs);
+#endif
         if(i%100==0){
 #ifdef GPU
-            if(ngpus != 1) sync_nets(nets, ngpus, 0);
+            if (gpu_index >= 0) {
+                if (ngpus != 1) sync_nets(nets, ngpus, 0);
+            }
 #endif
             char buff[256];
             sprintf(buff, "%s/%s.backup", backup_directory, base);
@@ -137,22 +182,36 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
         }
         if(i%10000==0 || (i < 1000 && i%100 == 0)){
 #ifdef GPU
-            if(ngpus != 1) sync_nets(nets, ngpus, 0);
+            if (gpu_index >= 0) {
+                if (ngpus != 1) sync_nets(nets, ngpus, 0);
+            }
 #endif
             char buff[256];
             sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
             save_weights(net, buff);
         }
         free_data(train);
+#ifdef GPU_STATS
+        opencl_dump_mem_stat();
+#endif
+#ifdef BENCHMARK
+        break;
+#endif
     }
 #ifdef GPU
-    if(ngpus != 1) sync_nets(nets, ngpus, 0);
+    if (gpu_index >= 0) {
+        if (ngpus != 1) sync_nets(nets, ngpus, 0);
+    }
 #endif
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
+    free(paths);
+    free(plist);
+    free(base);
+    free(nets);
+    free(options);
 }
-
 
 static int get_coco_image_id(char *filename)
 {
@@ -584,7 +643,8 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
             strtok(input, "\n");
         }
         image im = load_image_color(input,0,0);
-        image sized = letterbox_image(im, net->w, net->h);
+        int resize = im.w != net->w || im.h != net->h;
+        image sized = resize ? letterbox_image(im, net->w, net->h) : im;
         //image sized = resize_image(im, net->w, net->h);
         //image sized2 = resize_max(im, net->w);
         //image sized = crop_image(sized2, -((net->w - sized2.w)/2), -((net->h - sized2.h)/2), net->w, net->h);
@@ -601,7 +661,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         //printf("%d\n", nboxes);
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
-        draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
+        draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes, 0);
         free_detections(dets, nboxes);
         if(outfile){
             save_image(im, outfile);
@@ -613,14 +673,12 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
             if(fullscreen){
                 cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
             }
-            show_image(im, "predictions");
-            cvWaitKey(0);
-            cvDestroyAllWindows();
+            show_image(im, "predictions", 0);
 #endif
         }
 
         free_image(im);
-        free_image(sized);
+        if (resize) free_image(sized);
         if (filename) break;
     }
 }

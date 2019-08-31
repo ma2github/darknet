@@ -4,13 +4,13 @@ char *voc_names[] = {"aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "c
 
 void train_yolo(char *cfgfile, char *weightfile)
 {
-    char *train_images = "/data/voc/train.txt";
-    char *backup_directory = "/home/pjreddie/backup/";
+    char *train_images = "train.txt";
+    char *backup_directory = "backup";
     srand(time(0));
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
     float avg_loss = -1;
-    network *net = load_network(cfgfile, weightfile, 0);
+    network *net = load_network(cfgfile, weightfile, 1);
     printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate, net->momentum, net->decay);
     int imgs = net->batch*net->subdivisions;
     int i = *net->seen/imgs;
@@ -68,6 +68,12 @@ void train_yolo(char *cfgfile, char *weightfile)
             save_weights(net, buff);
         }
         free_data(train);
+#ifdef GPU_STATS
+        opencl_dump_mem_stat();
+#endif
+#ifdef BENCHMARK
+        break;
+#endif
     }
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
@@ -104,7 +110,7 @@ void validate_yolo(char *cfg, char *weights)
 
     char *base = "results/comp4_det_test_";
     //list *plist = get_paths("data/voc.2007.test");
-    list *plist = get_paths("/home/pjreddie/data/voc/2007_test.txt");
+    list *plist = get_paths("/home/piotr/data/voc/2007_test.txt");
     //list *plist = get_paths("data/voc.2012.test");
     char **paths = (char **)list_to_array(plist);
 
@@ -294,16 +300,12 @@ void test_yolo(char *cfgfile, char *weightfile, char *filename, float thresh)
         detection *dets = get_network_boxes(net, 1, 1, thresh, 0, 0, 0, &nboxes);
         if (nms) do_nms_sort(dets, l.side*l.side*l.n, l.classes, nms);
 
-        draw_detections(im, dets, l.side*l.side*l.n, thresh, voc_names, alphabet, 20);
+        draw_detections(im, dets, l.side*l.side*l.n, thresh, voc_names, alphabet, 20, 0);
         save_image(im, "predictions");
-        show_image(im, "predictions");
+        show_image(im, "predictions", 0);
         free_detections(dets, nboxes);
         free_image(im);
         free_image(sized);
-#ifdef OPENCV
-        cvWaitKey(0);
-        cvDestroyAllWindows();
-#endif
         if (filename) break;
     }
 }

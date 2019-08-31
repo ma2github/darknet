@@ -1,8 +1,9 @@
-![Darknet Logo](http://pjreddie.com/media/files/darknet-black-small.png)
+[![DarkNet Training](https://img.youtube.com/vi/Mxw7XkFBFPc/0.jpg)](https://www.youtube.com/watch?v=Mxw7XkFBFPc)
 
-# Darknet #
-Darknet is an open source neural network framework written in C and CUDA. It is fast, easy to install, and supports CPU and GPU computation.
+https://codingbytodesign.net/2018/05/26/darknet-training/ 
 
-For more information see the [Darknet project website](http://pjreddie.com/darknet).
+https://codingbytodesign.net/2018/08/01/darknet-in-opencl/
 
-For questions or issues please use the [Google Group](https://groups.google.com/forum/#!forum/darknet).
+For CLBlast look into patches at patches folder: git apply patches/clblast.patch
+
+Thanks!

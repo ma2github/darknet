@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated>
+      <config projectName="darknet" targetName="bindarknet" />
+      <config projectName="darknet" targetName="libdarknet_s" />
+      <config projectName="darknet" targetName="libdarknet" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="5c1f2602-dc6e-4bd5-b03e-d07ee3b8a66f" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/darknet.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/darknet.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/convolutional_kernels.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/convolutional_kernels.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/convolutional_layer.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/convolutional_layer.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/deconvolutional_kernels.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/deconvolutional_kernels.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/deconvolutional_layer.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/deconvolutional_layer.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/detection_layer.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/detection_layer.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iseg_layer.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/iseg_layer.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/network.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/network.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/opencl.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/opencl.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/region_layer.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/region_layer.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/yolo_layer.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/yolo_layer.c" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="OCFindUsagesOptions" text="false" ivars="false" properties="true" derivedClasses="false" />
+  <component name="ProjectId" id="1SYpmm00EtxGNgVFxYjyIi0e8EC" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
+    <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
+  </component>
+  <component name="RunManager" selected="CMake Application.bindarknet (tYv2)">
+    <configuration name="Build All" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet" EXPLICIT_BUILD_TARGET_NAME="all">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (Yv1Demo)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="yolo demo cfg/yolov1.cfg ../../../weights/yolov1.weights -c 0" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (Yv1)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="yolo test cfg/yolov1.cfg ../../../weights/yolov1.weights data/dog.jpg" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (Yv2Demo) (car)" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="detector demo cfg/coco.data cfg/yolov2.cfg ../../../weights/yolov2.weights ../../../car_vlog.mp4 -thresh .35" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (Yv2Demo) (car_low) " type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="detector demo cfg/coco.data cfg/yolov2.cfg ../../../weights/yolov2.weights ../../../car_vlog_low_res.mp4 -thresh .35" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (Yv2Demo)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="detector demo cfg/coco.data cfg/yolov2.cfg ../../../weights/yolov2.weights -c 0" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (Yv2)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="detect cfg/yolov2.cfg ../../../weights/yolov2.weights data/dog.jpg" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (Yv3-sppDemo)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="detector demo cfg/coco.data cfg/yolov3-spp.cfg ../../../weights/yolov3-spp.weights -c 0" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (Yv3-spp)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="detect cfg/yolov3-spp.cfg ../../../weights/yolov3-spp.weights data/dog.jpg" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (Yv3Demo)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="detector demo cfg/coco.data cfg/yolov3.cfg ../../../weights/yolov3.weights -c 0" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (Yv3)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="detect cfg/yolov3.cfg ../../../weights/yolov3.weights data/dog.jpg" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (cifar) (try1)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="classifier predict cfg/cifar.data cfg/cifar_small_test.cfg backup/cifar_small.weights data/cifar/test/6298_cat.png" WORKING_DIR="file://$USER_HOME$/cifar" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (cifar) (try2)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="classifier predict cfg/cifar.data cfg/cifar_small_test.cfg backup/cifar_small.weights data/cifar/test/4882_frog.png" WORKING_DIR="file://$USER_HOME$/cifar" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (cifar) (try3)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="classifier predict cfg/cifar.data cfg/cifar_small_test.cfg backup/cifar_small.weights data/cifar/test/2568_truck.png" WORKING_DIR="file://$USER_HOME$/cifar" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (cifar) (try4)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="classifier predict cfg/cifar.data cfg/cifar_small_test.cfg backup/cifar_small.weights data/cifar/test/5238_bird.png" WORKING_DIR="file://$USER_HOME$/cifar" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (cifar) (try5)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="classifier predict cfg/cifar.data cfg/cifar_small_test.cfg backup/cifar_small.weights data/cifar/train/35728_automobile.png -i 0" WORKING_DIR="file://$USER_HOME$/cifar" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (tYv1) (dep) (cnt.)" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="yolo train yolov1.cfg voc1.data backup1/yolov1.backup" WORKING_DIR="file://$USER_HOME$/voc" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (tYv1) (dep)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="yolo train yolov1.cfg voc1.data darknet.conv.weights" WORKING_DIR="file://$USER_HOME$/voc" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (tYv2) (cnt.)" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="detector train voc1.data yolov2-voc.cfg backup1/yolov2-voc.backup" WORKING_DIR="file://$USER_HOME$/voc" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (tYv2)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="detector train voc1.data yolov2-voc.cfg darknet19_448.conv.23" WORKING_DIR="file://$USER_HOME$/voc" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (tYv3) (cnt)" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="detector train voc2.data yolov3-voc.cfg backup2/yolov3-voc.backup" WORKING_DIR="file://$USER_HOME$/voc" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (tYv3)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="detector train voc2.data yolov3-voc.cfg darknet53.conv.74" WORKING_DIR="file://$USER_HOME$/voc" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (tcifar) (valid)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="classifier valid cfg/cifar.data cfg/cifar_small_test.cfg backup/cifar_small.weights" WORKING_DIR="file://$USER_HOME$/cifar" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="bindarknet (tcifar)" type="CMakeRunConfiguration" factoryName="Application" singleton="true" PROGRAM_PARAMS="classifier train cfg/cifar.data cfg/cifar_small.cfg" WORKING_DIR="file://$USER_HOME$/cifar" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="bindarknet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="darknet" RUN_TARGET_NAME="bindarknet">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="libdarknet" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="libdarknet" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="libdarknet_s" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="darknet" TARGET_NAME="libdarknet_s" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="CMake Application.Build All" />
+      <item itemvalue="CMake Application.bindarknet (Yv1Demo)" />
+      <item itemvalue="CMake Application.bindarknet (Yv1)" />
+      <item itemvalue="CMake Application.bindarknet (Yv2Demo)" />
+      <item itemvalue="CMake Application.bindarknet (Yv2)" />
+      <item itemvalue="CMake Application.bindarknet (Yv2Demo) (car)" />
+      <item itemvalue="CMake Application.bindarknet (Yv2Demo) (car_low) " />
+      <item itemvalue="CMake Application.bindarknet (Yv3-sppDemo)" />
+      <item itemvalue="CMake Application.bindarknet (Yv3-spp)" />
+      <item itemvalue="CMake Application.bindarknet (Yv3Demo)" />
+      <item itemvalue="CMake Application.bindarknet (Yv3)" />
+      <item itemvalue="CMake Application.bindarknet (tcifar)" />
+      <item itemvalue="CMake Application.bindarknet (tcifar) (valid)" />
+      <item itemvalue="CMake Application.bindarknet (cifar) (try1)" />
+      <item itemvalue="CMake Application.bindarknet (cifar) (try2)" />
+      <item itemvalue="CMake Application.bindarknet (cifar) (try3)" />
+      <item itemvalue="CMake Application.bindarknet (cifar) (try4)" />
+      <item itemvalue="CMake Application.bindarknet (cifar) (try5)" />
+      <item itemvalue="CMake Application.bindarknet (tYv1) (dep)" />
+      <item itemvalue="CMake Application.bindarknet (tYv1) (dep) (cnt.)" />
+      <item itemvalue="CMake Application.bindarknet (tYv2)" />
+      <item itemvalue="CMake Application.bindarknet (tYv2) (cnt.)" />
+      <item itemvalue="CMake Application.bindarknet (tYv3)" />
+      <item itemvalue="CMake Application.bindarknet (tYv3) (cnt)" />
+      <item itemvalue="CMake Application.libdarknet" />
+      <item itemvalue="CMake Application.libdarknet_s" />
+    </list>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="5c1f2602-dc6e-4bd5-b03e-d07ee3b8a66f" name="Default Changelist" comment="" />
+      <created>1532721917849</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1532721917849</updated>
+      <workItem from="1532721923906" duration="41000" />
+      <workItem from="1533071582343" duration="14000" />
+      <workItem from="1533072395045" duration="2200000" />
+      <workItem from="1533076392813" duration="90000" />
+      <workItem from="1533465199569" duration="295000" />
+      <workItem from="1544973155534" duration="4931000" />
+      <workItem from="1545004229098" duration="268000" />
+      <workItem from="1545084711013" duration="8346000" />
+      <workItem from="1545094152381" duration="1702000" />
+      <workItem from="1571750549086" duration="4693000" />
+      <workItem from="1572429943145" duration="956000" />
+      <workItem from="1573202998548" duration="152000" />
+      <workItem from="1573203186791" duration="394000" />
+      <workItem from="1573203602962" duration="176000" />
+      <workItem from="1573203885702" duration="236000" />
+      <workItem from="1573204157564" duration="169000" />
+      <workItem from="1573297543256" duration="90000" />
+      <workItem from="1573297654615" duration="129000" />
+      <workItem from="1574256841802" duration="79000" />
+      <workItem from="1575111983634" duration="5356000" />
+      <workItem from="1575205780543" duration="3509000" />
+      <workItem from="1576052413338" duration="296000" />
+      <workItem from="1576301487281" duration="31000" />
+      <workItem from="1576301550349" duration="1535000" />
+      <workItem from="1576361306123" duration="3681000" />
+      <workItem from="1576397284625" duration="4813000" />
+      <workItem from="1576405474619" duration="1592000" />
+      <workItem from="1577190069832" duration="2181000" />
+      <workItem from="1577250777771" duration="18395000" />
+      <workItem from="1577343685679" duration="2062000" />
+      <workItem from="1577347620444" duration="10000" />
+      <workItem from="1577348502533" duration="63000" />
+      <workItem from="1577348580676" duration="41000" />
+      <workItem from="1577348633640" duration="14000" />
+      <workItem from="1577428706252" duration="193000" />
+      <workItem from="1577429683391" duration="20000" />
+      <workItem from="1579356903319" duration="28000" />
+      <workItem from="1579356939915" duration="2358000" />
+      <workItem from="1579512124041" duration="19000" />
+      <workItem from="1579512151664" duration="6729000" />
+      <workItem from="1579523168128" duration="8798000" />
+      <workItem from="1579595959016" duration="7479000" />
+      <workItem from="1579855682765" duration="1150000" />
+      <workItem from="1582220064233" duration="216000" />
+      <workItem from="1582220310619" duration="2076000" />
+      <workItem from="1582223398945" duration="5029000" />
+      <workItem from="1582453865205" duration="689000" />
+      <workItem from="1582454602230" duration="209000" />
+      <workItem from="1582454875184" duration="60000" />
+      <workItem from="1583098500943" duration="2811000" />
+      <workItem from="1583125438389" duration="979000" />
+      <workItem from="1583177185033" duration="3526000" />
+      <workItem from="1583267085739" duration="3727000" />
+      <workItem from="1583445509740" duration="379000" />
+      <workItem from="1583489641753" duration="1401000" />
+      <workItem from="1583518412998" duration="1685000" />
+      <workItem from="1583526889477" duration="14000" />
+      <workItem from="1583527015207" duration="59000" />
+      <workItem from="1583527111578" duration="82000" />
+      <workItem from="1583554634686" duration="5295000" />
+      <workItem from="1583561617468" duration="5701000" />
+      <workItem from="1583567563787" duration="1938000" />
+      <workItem from="1583577790320" duration="14000" />
+      <workItem from="1583578402068" duration="401000" />
+      <workItem from="1583579272105" duration="218000" />
+      <workItem from="1583579499021" duration="4423000" />
+      <workItem from="1583591107447" duration="9559000" />
+      <workItem from="1583601683368" duration="1734000" />
+      <workItem from="1583608217376" duration="2966000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.cfg" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="398" y="193" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583604046919">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state x="298" y="163" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1440.813@0.23.1440.813" timestamp="1577343923493" />
+    <state x="398" y="193" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1920.977@0.23.1920.977" timestamp="1583604046919" />
+    <state x="451" y="210" key="#com.intellij.execution.impl.EditConfigurationsDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1582454250091" />
+    <state x="676" y="280" width="624" height="544" key="#com.intellij.openapi.updateSettings.impl.PluginUpdateInfoDialog" timestamp="1579512138708">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="676" y="280" width="624" height="544" key="#com.intellij.openapi.updateSettings.impl.PluginUpdateInfoDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1579512138708" />
+    <state x="726" y="301" width="524" height="502" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1577348610424">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="726" y="301" width="524" height="502" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1577348610424" />
+    <state x="712" y="376" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1" timestamp="1583589979068">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state x="712" y="376" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1/0.23.1920.977@0.23.1920.977" timestamp="1583589979068" />
+    <state x="0" y="23" width="1920" height="976" key="CommitChangelistDialog2" timestamp="1583600918504">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state x="382" y="46" key="CommitChangelistDialog2/0.23.1440.813@0.23.1440.813" timestamp="1577347602630" />
+    <state x="0" y="23" width="1920" height="976" key="CommitChangelistDialog2/0.23.1920.977@0.23.1920.977" timestamp="1583600918504" />
+    <state x="558" y="149" width="860" height="807" key="CommitChangelistDialog2/67.27.1853.1053@67.27.1853.1053" timestamp="1582223704184" />
+    <state width="474" height="466" key="DebuggerActiveHint" timestamp="1577309006050">
+      <screen x="0" y="23" width="1440" height="813" />
+    </state>
+    <state width="474" height="466" key="DebuggerActiveHint/0.23.1440.813@0.23.1440.813" timestamp="1577309006050" />
+    <state x="181" y="106" width="1482" height="872" key="DiffContextDialog" timestamp="1583600916846">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state x="181" y="106" key="DiffContextDialog/0.23.1920.977@0.23.1920.977" timestamp="1583600916846" />
+    <state x="242" y="117" width="1482" height="872" key="DiffContextDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1576403863577" />
+    <state x="776" y="310" width="424" height="484" key="FileChooserDialogImpl" timestamp="1576362692578">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="776" y="310" width="424" height="484" key="FileChooserDialogImpl/67.27.1853.1053@67.27.1853.1053" timestamp="1576362692578" />
+    <state width="1878" height="267" key="GridCell.Tab.0.bottom" timestamp="1583611601074">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state width="1398" height="209" key="GridCell.Tab.0.bottom/0.23.1440.813@0.23.1440.813" timestamp="1577347609339" />
+    <state width="1878" height="267" key="GridCell.Tab.0.bottom/0.23.1920.977@0.23.1920.977" timestamp="1583611601074" />
+    <state width="1807" height="387" key="GridCell.Tab.0.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1582454810861" />
+    <state width="1878" height="267" key="GridCell.Tab.0.center" timestamp="1583611601074">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state width="1398" height="209" key="GridCell.Tab.0.center/0.23.1440.813@0.23.1440.813" timestamp="1577347609339" />
+    <state width="1878" height="267" key="GridCell.Tab.0.center/0.23.1920.977@0.23.1920.977" timestamp="1583611601074" />
+    <state width="1807" height="387" key="GridCell.Tab.0.center/67.27.1853.1053@67.27.1853.1053" timestamp="1582454810861" />
+    <state width="1878" height="267" key="GridCell.Tab.0.left" timestamp="1583611601074">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state width="1398" height="209" key="GridCell.Tab.0.left/0.23.1440.813@0.23.1440.813" timestamp="1577347609338" />
+    <state width="1878" height="267" key="GridCell.Tab.0.left/0.23.1920.977@0.23.1920.977" timestamp="1583611601074" />
+    <state width="1807" height="387" key="GridCell.Tab.0.left/67.27.1853.1053@67.27.1853.1053" timestamp="1582454810860" />
+    <state width="1878" height="267" key="GridCell.Tab.0.right" timestamp="1583611601074">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state width="1398" height="209" key="GridCell.Tab.0.right/0.23.1440.813@0.23.1440.813" timestamp="1577347609339" />
+    <state width="1878" height="267" key="GridCell.Tab.0.right/0.23.1920.977@0.23.1920.977" timestamp="1583611601074" />
+    <state width="1807" height="387" key="GridCell.Tab.0.right/67.27.1853.1053@67.27.1853.1053" timestamp="1582454810861" />
+    <state width="1878" height="325" key="GridCell.Tab.1.bottom" timestamp="1583601612107">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state width="1398" height="220" key="GridCell.Tab.1.bottom/0.23.1440.813@0.23.1440.813" timestamp="1577342050162" />
+    <state width="1878" height="325" key="GridCell.Tab.1.bottom/0.23.1920.977@0.23.1920.977" timestamp="1583601612107" />
+    <state width="1807" height="343" key="GridCell.Tab.1.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1579619600075" />
+    <state width="1878" height="325" key="GridCell.Tab.1.center" timestamp="1583601612107">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state width="1398" height="220" key="GridCell.Tab.1.center/0.23.1440.813@0.23.1440.813" timestamp="1577342050161" />
+    <state width="1878" height="325" key="GridCell.Tab.1.center/0.23.1920.977@0.23.1920.977" timestamp="1583601612107" />
+    <state width="1807" height="343" key="GridCell.Tab.1.center/67.27.1853.1053@67.27.1853.1053" timestamp="1579619600074" />
+    <state width="1878" height="325" key="GridCell.Tab.1.left" timestamp="1583601612107">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state width="1398" height="220" key="GridCell.Tab.1.left/0.23.1440.813@0.23.1440.813" timestamp="1577342050161" />
+    <state width="1878" height="325" key="GridCell.Tab.1.left/0.23.1920.977@0.23.1920.977" timestamp="1583601612107" />
+    <state width="1807" height="343" key="GridCell.Tab.1.left/67.27.1853.1053@67.27.1853.1053" timestamp="1579619600073" />
+    <state width="1878" height="325" key="GridCell.Tab.1.right" timestamp="1583601612107">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state width="1398" height="220" key="GridCell.Tab.1.right/0.23.1440.813@0.23.1440.813" timestamp="1577342050162" />
+    <state width="1878" height="325" key="GridCell.Tab.1.right/0.23.1920.977@0.23.1920.977" timestamp="1583601612107" />
+    <state width="1807" height="343" key="GridCell.Tab.1.right/67.27.1853.1053@67.27.1853.1053" timestamp="1579619600074" />
+    <state x="725" y="244" width="431" height="575" key="RollbackChangesDialog" timestamp="1583567457061">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state x="544" y="207" key="RollbackChangesDialog/0.23.1440.813@0.23.1440.813" timestamp="1577347600217" />
+    <state x="725" y="244" key="RollbackChangesDialog/0.23.1920.977@0.23.1920.977" timestamp="1583567457061" />
+    <state x="767" y="265" width="431" height="575" key="RollbackChangesDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1582223700491" />
+    <state x="469" y="150" key="SettingsEditor" timestamp="1583593429378">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state x="469" y="150" key="SettingsEditor/0.23.1920.977@0.23.1920.977" timestamp="1583593429378" />
+    <state x="603" y="351" key="com.intellij.ide.util.TipDialog" timestamp="1583125691769">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state x="603" y="351" key="com.intellij.ide.util.TipDialog/0.23.1920.977@0.23.1920.977" timestamp="1583125691769" />
+    <state x="649" y="380" key="com.intellij.ide.util.TipDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1582454876733" />
+    <state x="1023" y="318" width="895" height="682" key="find.popup" timestamp="1583611227694">
+      <screen x="0" y="23" width="1920" height="977" />
+    </state>
+    <state x="446" y="225" width="673" height="472" key="find.popup/0.23.1440.813@0.23.1440.813" timestamp="1577309364761" />
+    <state x="1023" y="318" width="895" height="682" key="find.popup/0.23.1920.977@0.23.1920.977" timestamp="1583611227694" />
+    <state x="641" y="289" width="863" height="576" key="find.popup/67.27.1853.1053@67.27.1853.1053" timestamp="1582454429704" />
+  </component>
+</project>
