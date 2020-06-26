@@ -268,7 +268,7 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
 
         if(class >= 0) {
 
-            int width = im.h * .004;
+            int width = im.h * .002;
 
             /*
                if(0){
@@ -304,7 +304,7 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
 
             draw_box_width(im, left, top, right, bot, width, red, green, blue);
             if (alphabet) {
-                image label = get_label(alphabet, labelstr, (im.h * .02));
+                image label = get_label(alphabet, labelstr, (im.h * .002));
                 draw_label(im, top + width, left, label, rgb);
                 free_image(label);
             }
@@ -837,8 +837,12 @@ image float_to_image(int w, int h, int c, float *data)
     return out;
 }
 
+pthread_mutex_t pi_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void place_image(image im, int w, int h, int dx, int dy, image canvas)
 {
+    pthread_mutex_lock(&pi_mutex);
+
     int x, y, c;
     for(c = 0; c < im.c; ++c){
         for(y = 0; y < h; ++y){
@@ -850,6 +854,8 @@ void place_image(image im, int w, int h, int dx, int dy, image canvas)
             }
         }
     }
+    
+    pthread_mutex_unlock(&pi_mutex);
 }
 
 image center_crop_image(image im, int w, int h)

@@ -60,24 +60,14 @@ void resize_region_layer(layer *l, int w, int h)
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free(l->delta_gpu);
-        opencl_free(l->output_gpu);
+        opencl_free_gpu_only(l->delta_gpu);
+        opencl_free_gpu_only(l->output_gpu);
     }
-    else {
-        free(l->output);
-        free(l->delta);
-    }
-#else
-    free(l->output);
-    free(l->delta);
 #endif
-
     l->outputs = h*w*l->n*(l->classes + l->coords + 1);
     l->inputs = l->outputs;
-
-    l->output = calloc(l->batch*l->outputs, sizeof(float));
-    l->delta = calloc(l->batch*l->outputs, sizeof(float));
-
+    l->output = realloc(l->output, l->batch*l->outputs*sizeof(float));
+    l->delta = realloc(l->delta, l->batch*l->outputs*sizeof(float));
 #ifdef GPU
     if (gpu_index >= 0) {
         l->delta_gpu = opencl_make_array(l->delta, l->batch*l->outputs);

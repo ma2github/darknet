@@ -42,22 +42,11 @@ void resize_normalization_layer(layer *layer, int w, int h)
 {
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free(layer->output_gpu);
-        opencl_free(layer->delta_gpu);
-        opencl_free(layer->squared_gpu);
-        opencl_free(layer->norms_gpu);
+        opencl_free_gpu_only(layer->output_gpu);
+        opencl_free_gpu_only(layer->delta_gpu);
+        opencl_free_gpu_only(layer->squared_gpu);
+        opencl_free_gpu_only(layer->norms_gpu);
     }
-    else {
-        free(layer->output);
-        free(layer->delta);
-        free(layer->squared);
-        free(layer->norms);
-    }
-#else
-    free(layer->output);
-    free(layer->delta);
-    free(layer->squared);
-    free(layer->norms);
 #endif
     int c = layer->c;
     int batch = layer->batch;
@@ -67,12 +56,10 @@ void resize_normalization_layer(layer *layer, int w, int h)
     layer->out_w = w;
     layer->inputs = w*h*c;
     layer->outputs = layer->inputs;
-
-    layer->output = calloc(h * w * c * batch, sizeof(float));
-    layer->delta = calloc(h * w * c * batch, sizeof(float));
-    layer->squared = calloc(h * w * c * batch, sizeof(float));
-    layer->norms = calloc(h * w * c * batch, sizeof(float));
-
+    layer->output = realloc(layer->output, h * w * c * batch * sizeof(float));
+    layer->delta = realloc(layer->delta, h * w * c * batch * sizeof(float));
+    layer->squared = realloc(layer->squared, h * w * c * batch * sizeof(float));
+    layer->norms = realloc(layer->norms, h * w * c * batch *sizeof(float));
 #ifdef GPU
     if (gpu_index >= 0) {
         layer->output_gpu = opencl_make_array(layer->output, h * w * c * batch);

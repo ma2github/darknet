@@ -37,6 +37,34 @@ __kernel void test_kernel(int N, __global float *input, __global float *output, 
 }
 
 
+static void atomicAdd(volatile __global float *a, float v) {
+    /*
+    float s = v;
+    float n = 0;
+    float o = 0;
+    do {
+        n = s + atom_xchg(a, o);
+        s = o + atom_xchg(a, n);
+    }
+    while (s != o);
+    */
+    union {
+        float f;
+        unsigned int i;
+    } o;
+    o.i = 0;
+    union {
+        float f;
+        unsigned int i;
+    } n;
+    n.i = 1;
+    do {
+        o.f = *a;
+        n.f = o.f + v;
+    } while (atom_cmpxchg((__global unsigned int *)a, o.i, n.i) != o.i);
+}
+
+
 __kernel void scale_bias_kernel(int N, __global float *output, __global float *biases, int batch, int n, int size)
 {
     int index = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
@@ -49,15 +77,28 @@ __kernel void scale_bias_kernel(int N, __global float *output, __global float *b
 }
 
 
-__kernel void backward_scale_kernel(int N, int batch, int n, int size, __global float *x_norm, __global float *delta, __global float *scale_updates)
+__kernel void backward_scale_kernel(int tuning, __local float* sums, int batch, int n, int size, __global float *x_norm, __global float *delta, __global float *scale_updates)
 {
-    int index = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
+    int t = get_global_id(0);
+    if (t > tuning) return;
+    int i = get_global_id(1);
+    if (i > n) return;
 
-    if (index >= N) return;
+    sums[t] = 0;
 
-    int i = (index % (n*size) / size);
+    int k,j,s;
+    for(j = 0; j < batch; ++j){
+        for(k = t; k < size; k += tuning){
+            int index = size*i + size*n*j + k + t;
+            sums[t] += delta[index]*x_norm[index];
+        }
+    }
 
-    scale_updates[i] += delta[index]*x_norm[index];
+    if (t == 0) {
+        for(s = 0; s < tuning; ++s) {
+            scale_updates[i] += sums[s];
+        }
+    }
 }
 
 
@@ -73,15 +114,28 @@ __kernel void add_bias_kernel(int N, __global float *output, __global float *bia
 }
 
 
-__kernel void backward_bias_kernel(int N, int batch, int n, int size, __global float *bias_updates, __global float *delta)
+__kernel void backward_bias_kernel(int tuning, __local float* sums, int batch, int n, int size, __global float *bias_updates, __global float *delta)
 {
-    int index = (get_group_id(0) + get_group_id(1)*get_num_groups(0)) * get_local_size(0) + get_local_id(0);
+    int t = get_global_id(0);
+    if (t > tuning) return;
+    int i = get_global_id(1);
+    if (i > n) return;
 
-    if (index >= N) return;
+    sums[t] = 0;
 
-    int i = (index % (n*size) / size);
+    int k,j,s;
+    for(j = 0; j < batch; ++j){
+        for(k = t; k < size; k += tuning){
+            int index = size*i + size*n*j + k + t;
+            sums[t] += delta[index];
+        }
+    }
 
-    bias_updates[i] += delta[index];
+    if (t == 0) {
+        for(s = 0; s < tuning; ++s) {
+            bias_updates[i] += sums[s];
+        }
+    }
 }
 
 
@@ -139,7 +193,7 @@ __kernel void mean_delta_kernel(int N, __global float *delta, __global float *va
         }
     }
 
-    mean_delta[i] *= (-1.f/sqrt(variance[i] + .0001f));
+    mean_delta[i] *= (-1.f/sqrt(variance[i] + .00001f));
 }
 
 
@@ -156,7 +210,7 @@ __kernel void variance_delta_kernel(int N, __global float *x, __global float *de
             variance_delta[i] += delta[index] * (x[index] - mean[i]);
         }
     }
-    variance_delta[i] *= -.5f * pow(variance[i] + .0001f, (float)(-3.f/2.f));
+    variance_delta[i] *= -.5f * pow(variance[i] + .00001f, (float)(-3.f/2.f));
 }
 
 
@@ -172,16 +226,15 @@ __kernel void accumulate_kernel(__global float *x, int n, int groups, __global f
 }
 
 
-__kernel void fast_mean_kernel(int tuning, __local float *sums, int filters, int batch, int spatial, __global float *x, __global float *mean)
-{
-    int i = get_global_id(0);
-    if (i >= filters) return;
-    int t = get_local_id(0);
+__kernel void fast_mean_kernel(int tuning, __local float *sums, int filters, int batch, int spatial, __global float *x, __global float *mean) {
+    int t = get_global_id(0);
     if (t >= tuning) return;
+    int i = get_global_id(1);
+    if (i >= filters) return;
 
     sums[t] = 0;
 
-    int j,k;
+    int j, k, s;
     for (j = 0; j < batch; ++j) {
         for (k = t; k < spatial; k += tuning) {
             int index = j * filters * spatial + i * spatial + k;
@@ -189,27 +242,26 @@ __kernel void fast_mean_kernel(int tuning, __local float *sums, int filters, int
         }
     }
 
-    barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
-
-    int s;
-    mean[i] = 0;
-    for(s = 0; s < tuning; ++s) {
-        mean[i] += sums[s];
+    if (t == 0) {
+        mean[i] = 0;
+        for (s = 0; s < tuning; ++s) {
+            mean[i] += sums[s];
+        }
+        mean[i] /= (spatial * batch);
     }
-    mean[i] /= (spatial * batch);
 }
 
 
 __kernel void fast_variance_kernel(int tuning, __local float *sums, int filters, int batch, int spatial, __global float *x, __global float *mean, __global float *variance)
 {
-    int i = get_global_id(0);
-    if (i >= filters) return;
-    int t = get_local_id(0);
+    int t = get_global_id(0);
     if (t >= tuning) return;
+    int i = get_global_id(1);
+    if (i >= filters) return;
 
     sums[t] = 0;
 
-    int j,k;
+    int j,k,s;
     for (j = 0; j < batch; ++j) {
         for (k = t; k < spatial; k += tuning) {
             int index = j * filters * spatial + i * spatial + k;
@@ -217,27 +269,26 @@ __kernel void fast_variance_kernel(int tuning, __local float *sums, int filters,
         }
     }
 
-    barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
-
-    int s;
-    variance[i] = 0;
-    for(s = 0; s < tuning; ++s) {
-        variance[i] += sums[s];
+    if (t == 0) {
+        variance[i] = 0;
+        for (s = 0; s < tuning; ++s) {
+            variance[i] += sums[s];
+        }
+        variance[i] /= (spatial * batch - 1);
     }
-    variance[i] /= (spatial * batch - 1);
 }
 
 
  __kernel void fast_mean_delta_kernel(int tuning, __local float *sums, int filters, int batch, int spatial, __global float *variance, __global float *delta, __global float *mean_delta)
 {
-    int i = get_global_id(0);
-    if (i >= filters) return;
-    int t = get_local_id(0);
+    int t = get_global_id(0);
     if (t >= tuning) return;
+    int i = get_global_id(1);
+    if (i >= filters) return;
 
     sums[t] = 0;
 
-    int j,k;
+    int j,k,s;
     for (j = 0; j < batch; ++j) {
         for (k = t; k < spatial; k += tuning) {
             int index = j * filters * spatial + i * spatial + k;
@@ -245,26 +296,25 @@ __kernel void fast_variance_kernel(int tuning, __local float *sums, int filters,
         }
     }
 
-    barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
-
-    int s;
-    mean_delta[i] = 0;
-    for(s = 0; s < tuning; ++s) {
-        mean_delta[i] += sums[s];
+    if (t == 0) {
+        mean_delta[i] = 0;
+        for (s = 0; s < tuning; ++s) {
+            mean_delta[i] += sums[s];
+        }
+        mean_delta[i] *= (-1.f/sqrt(variance[i] + .00001f));
     }
-    mean_delta[i] *= (-1.f/sqrt(variance[i] + .0001f));
 }
 
 __kernel void fast_variance_delta_kernel(int tuning, __local float *sums, int filters, int batch, int spatial, __global float *x, __global float *variance, __global float *delta, __global float *mean, __global float *variance_delta)
 {
-    int i = get_global_id(0);
-    if (i >= filters) return;
-    int t = get_local_id(0);
+    int t = get_global_id(0);
     if (t >= tuning) return;
+    int i = get_global_id(1);
+    if (i >= filters) return;
 
     sums[t] = 0;
 
-    int j,k;
+    int j,k,s;
     for (j = 0; j < batch; ++j) {
         for (k = t; k < spatial; k += tuning) {
             int index = j * filters * spatial + i * spatial + k;
@@ -272,14 +322,13 @@ __kernel void fast_variance_delta_kernel(int tuning, __local float *sums, int fi
         }
     }
 
-    barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
-
-    int s;
-    variance_delta[i] = 0;
-    for(s = 0; s < tuning; ++s) {
-        variance_delta[i] += sums[s];
+    if (t == 0) {
+        variance_delta[i] = 0;
+        for (s = 0; s < tuning; ++s) {
+            variance_delta[i] += sums[s];
+        }
+        variance_delta[i] *= -.5f * pow(variance[i] + .00001f, (float)(-3.f/2.f));
     }
-    variance_delta[i] *= -.5f * pow(variance[i] + .0001f, (float)(-3.f/2.f));
 }
 
 
@@ -341,7 +390,6 @@ __kernel void l2norm_kernel(int N, __global float *x, __global float *dx, int ba
         dx[index] = (1 - x[index]) / sum;
     }
 }
-
 
 __kernel void reorg_kernel(int N, __global float *x, int w, int h, int c, int batch, int stride, int forward, __global float *out)
 {
@@ -731,14 +779,13 @@ __kernel void upsample_kernel(int N, __global float *x, int w, int h, int c, int
 
     int in_index = b*w*h*c + in_c*w*h + in_h*w + in_w;
 
-    if(forward)
-        out[out_index] += scale * x[in_index];
-    else
-        x[in_index] += scale * out[out_index];
+    if(forward) out[out_index] += scale * x[in_index];
+    else atomicAdd(&x[in_index], scale * out[out_index]);
 }
 
 
 __kernel void gemm_kernel(
+        int tuning, __local float* sums,
         int TA, int TB,
         int M, int N, int K,
         __const float ALPHA,
@@ -747,25 +794,43 @@ __kernel void gemm_kernel(
         __const float BETA,
         __global float *C, int offset_C, int ldc) {
 
-    int id = get_global_id(0);
+    int td = get_global_id(0);
+    if (td > tuning) return;
+    int id = get_global_id(1);
+    if (id > N*M) return;
 
     int iM = id / N;
     int jN = id % N;
     int kK = 0;
+    int ts = 0;
 
     C[iM * ldc + jN + offset_C] *= BETA;
 
-    barrier(CLK_GLOBAL_MEM_FENCE);
+    sums[td] = 0;
 
-    for(kK = 0; kK < K; ++kK) {
+    for(kK = td; kK < K; kK += tuning) {
         if (TA==0 && TB==0) {
-            C[iM * ldc + jN + offset_C] += ALPHA * A[iM * lda + kK + offset_A] * B[kK * ldb + jN + offset_B];
+            sums[td] += ALPHA * A[iM * lda + kK + offset_A] * B[kK * ldb + jN + offset_B];
         } else if (TA==1 && TB==0) {
-            C[iM * ldc + jN + offset_C] += ALPHA * A[kK * lda + iM + offset_A] * B[kK * ldb + jN + offset_B];
+            sums[td] += ALPHA * A[kK * lda + iM + offset_A] * B[kK * ldb + jN + offset_B];
         } else if (TA==0 && TB==1) {
-            C[iM * ldc + jN + offset_C] += ALPHA * A[iM * lda + kK + offset_A] * B[jN * ldb + kK + offset_B];
+            sums[td] += ALPHA * A[iM * lda + kK + offset_A] * B[jN * ldb + kK + offset_B];
         } else {
-            C[iM * ldc + jN + offset_C] += ALPHA * A[iM + kK * lda + offset_A] * B[kK + jN * ldb + offset_B];
+            sums[td] += ALPHA * A[iM + kK * lda + offset_A] * B[kK + jN * ldb + offset_B];
+        }
+    }
+
+    if (td == 0) {
+        for(ts = 0; ts < tuning; ++ts) {
+            if (TA==0 && TB==0) {
+                C[iM * ldc + jN + offset_C] += sums[ts];
+            } else if (TA==1 && TB==0) {
+                C[iM * ldc + jN + offset_C] += sums[ts];
+            } else if (TA==0 && TB==1) {
+                C[iM * ldc + jN + offset_C] += sums[ts];
+            } else {
+                C[iM * ldc + jN + offset_C] += sums[ts];
+            }
         }
     }
 }

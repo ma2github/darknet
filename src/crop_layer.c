@@ -51,25 +51,16 @@ void resize_crop_layer(layer *l, int w, int h)
 {
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free(l->output_gpu);
+        opencl_free_gpu_only(l->output_gpu);
     }
-    else {
-        free(l->output);
-    }
-#else
-    free(l->output);
 #endif
-
     l->w = w;
     l->h = h;
-
     l->out_w =  l->scale*w;
     l->out_h =  l->scale*h;
-
     l->inputs = l->w * l->h * l->c;
     l->outputs = l->out_h * l->out_w * l->out_c;
-
-    l->output = calloc(l->batch*l->outputs, sizeof(float));
+    l->output = realloc(l->output, l->batch*l->outputs*sizeof(float));
 #ifdef GPU
     if (gpu_index >= 0) {
         l->output_gpu = opencl_make_array(l->output, l->outputs * l->batch);

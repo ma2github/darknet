@@ -76,25 +76,15 @@ void resize_reorg_layer(layer *l, int w, int h)
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free(l->output_gpu);
-        opencl_free(l->delta_gpu);
+        opencl_free_gpu_only(l->output_gpu);
+        opencl_free_gpu_only(l->delta_gpu);
     }
-    else {
-        free(l->output);
-        free(l->delta);
-    }
-#else
-    free(l->output);
-    free(l->delta);
 #endif
-
     l->outputs = l->out_h * l->out_w * l->out_c;
     l->inputs = l->outputs;
     int output_size = l->outputs * l->batch;
-
-    l->output = calloc(output_size, sizeof(float));
-    l->delta = calloc(output_size, sizeof(float));
-
+    l->output = realloc(l->output, output_size*sizeof(float));
+    l->delta = realloc(l->delta, output_size*sizeof(float));
 #ifdef GPU
     if (gpu_index >= 0) {
         l->output_gpu = opencl_make_array(l->output, output_size);

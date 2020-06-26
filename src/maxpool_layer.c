@@ -57,34 +57,21 @@ void resize_maxpool_layer(maxpool_layer *l, int w, int h)
 {
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free(l->indexes_gpu);
-        opencl_free(l->output_gpu);
-        opencl_free(l->delta_gpu);
+        opencl_free_gpu_only(l->indexes_gpu);
+        opencl_free_gpu_only(l->output_gpu);
+        opencl_free_gpu_only(l->delta_gpu);
     }
-    else {
-        free(l->indexes);
-        free(l->output);
-        free(l->delta);
-    }
-#else
-    free(l->indexes);
-    free(l->output);
-    free(l->delta);
 #endif
-
     l->h = h;
     l->w = w;
     l->inputs = h*w*l->c;
-
     l->out_w = (w + l->pad - l->size)/l->stride + 1;
     l->out_h = (h + l->pad - l->size)/l->stride + 1;
     l->outputs = l->out_w * l->out_h * l->c;
     int output_size = l->outputs * l->batch;
-
-    l->indexes = calloc(output_size, sizeof(int));
-    l->output = calloc(output_size, sizeof(float));
-    l->delta = calloc(output_size, sizeof(float));
-
+    l->indexes = realloc(l->indexes, output_size*sizeof(int));
+    l->output = realloc(l->output, output_size*sizeof(float));
+    l->delta = realloc(l->delta, output_size*sizeof(float));
     #ifdef GPU
     if (gpu_index >= 0) {
         l->indexes_gpu = opencl_make_int_array(l->indexes, output_size);

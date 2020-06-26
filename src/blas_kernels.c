@@ -313,11 +313,13 @@ void scale_bias_gpu(cl_mem_ext output, cl_mem_ext biases, int batch, int n, int 
 
 void backward_scale_gpu(cl_mem_ext x_norm, cl_mem_ext delta, int batch, int n, int size, cl_mem_ext scale_updates)
 {
-    int N = batch*n*size;
-    dim2 dimGrid;
-    dimGrid = dim2_create(N, 1);
+    int tuning = 16;
+    dim2 dimGridG1;
+    dimGridG1 = dim2_create(tuning, n);
+    dim2 dimGridL1;
+    dimGridL1 = dim2_create(tuning, 1);
 
-    opencl_kernel(opencl_backward_scale_kernel[opencl_device_id_t], dimGrid, 14, &N, sizeof(cl_int), &batch, sizeof(cl_int), &n, sizeof(cl_int), &size, sizeof(cl_int), &x_norm.mem, sizeof(cl_mem), &delta.mem, sizeof(cl_mem), &scale_updates.mem, sizeof(cl_mem));
+    opencl_kernel_local(opencl_backward_scale_kernel[opencl_device_id_t], dimGridG1, dimGridL1, 16, &tuning, sizeof(cl_int), NULL, tuning*sizeof(cl_float), &batch, sizeof(cl_int), &n, sizeof(cl_int), &size, sizeof(cl_int), &x_norm.mem, sizeof(cl_mem), &delta.mem, sizeof(cl_mem), &scale_updates.mem, sizeof(cl_mem));
 }
 
 
@@ -333,11 +335,13 @@ void add_bias_gpu(cl_mem_ext output, cl_mem_ext biases, int batch, int n, int si
 
 void backward_bias_gpu(cl_mem_ext bias_updates, cl_mem_ext delta, int batch, int n, int size)
 {
-    int N = batch*n*size;
-    dim2 dimGrid;
-    dimGrid = dim2_create(N, 1);
+    int tuning = 16;
+    dim2 dimGridG1;
+    dimGridG1 = dim2_create(tuning, n);
+    dim2 dimGridL1;
+    dimGridL1 = dim2_create(tuning, 1);
 
-    opencl_kernel(opencl_backward_bias_kernel[opencl_device_id_t], dimGrid, 12, &N, sizeof(cl_int), &batch, sizeof(cl_int), &n, sizeof(cl_int), &size, sizeof(cl_int), &bias_updates.mem, sizeof(cl_mem), &delta.mem, sizeof(cl_mem));
+    opencl_kernel_local(opencl_backward_bias_kernel[opencl_device_id_t], dimGridG1, dimGridL1, 14, &tuning, sizeof(cl_int), NULL, tuning*sizeof(cl_float), &batch, sizeof(cl_int), &n, sizeof(cl_int), &size, sizeof(cl_int), &bias_updates.mem, sizeof(cl_mem), &delta.mem, sizeof(cl_mem));
 }
 
 
@@ -420,7 +424,7 @@ void fast_mean_gpu(cl_mem_ext x, int batch, int filters, int spatial, cl_mem_ext
 {
     int tuning = 16;
     dim2 dimGridG1;
-    dimGridG1 = dim2_create(filters, 1);
+    dimGridG1 = dim2_create(tuning, filters);
     dim2 dimGridL1;
     dimGridL1 = dim2_create(tuning, 1);
 
@@ -431,7 +435,7 @@ void fast_variance_gpu(cl_mem_ext x, cl_mem_ext mean, int batch, int filters, in
 {
     int tuning = 16;
     dim2 dimGridG1;
-    dimGridG1 = dim2_create(filters, 1);
+    dimGridG1 = dim2_create(tuning, filters);
     dim2 dimGridL1;
     dimGridL1 = dim2_create(tuning, 1);
 
@@ -442,7 +446,7 @@ void fast_mean_delta_gpu(cl_mem_ext delta, cl_mem_ext variance, int batch, int f
 {
     int tuning = 16;
     dim2 dimGridG1;
-    dimGridG1 = dim2_create(filters, 1);
+    dimGridG1 = dim2_create(tuning, filters);
     dim2 dimGridL1;
     dimGridL1 = dim2_create(tuning, 1);
 
@@ -453,7 +457,7 @@ void fast_variance_delta_gpu(cl_mem_ext x, cl_mem_ext delta, cl_mem_ext mean, cl
 {
     int tuning = 16;
     dim2 dimGridG1;
-    dimGridG1 = dim2_create(filters, 1);
+    dimGridG1 = dim2_create(tuning, filters);
     dim2 dimGridL1;
     dimGridL1 = dim2_create(tuning, 1);
 
@@ -730,6 +734,9 @@ void softmax_offset_tree(cl_mem_ext input, int offset, int spatial, int batch, i
     cl_mem_ext tree_groups_size = opencl_make_int_array(hier.group_size, hier.groups);
     cl_mem_ext tree_groups_offset = opencl_make_int_array(hier.group_offset, hier.groups);
 
+    opencl_push_int_array(tree_groups_size, hier.group_size, hier.groups);
+    opencl_push_int_array(tree_groups_offset, hier.group_offset, hier.groups);
+
     int num = spatial*batch*hier.groups;
 
     dim2 dimBatch;
@@ -748,8 +755,8 @@ void softmax_offset_tree(cl_mem_ext input, int offset, int spatial, int batch, i
                   &tree_groups_offset.mem, sizeof(cl_mem)
     );
 
-    opencl_free(tree_groups_size);
-    opencl_free(tree_groups_offset);
+    opencl_free_gpu_only(tree_groups_size);
+    opencl_free_gpu_only(tree_groups_offset);
 }
 
 void softmax_offset_gpu(cl_mem_ext input, int offset, int n, int batch, int batch_offset, int groups, int group_offset, int stride, float temp, cl_mem_ext output)
@@ -769,11 +776,11 @@ void softmax_tree_gpu(cl_mem_ext input, int spatial, int batch, int stride, floa
     dim2 dimBatch;
     dimBatch = opencl_gridsize(batch * hier.groups);
 
-    float * size = calloc(hier.groups, sizeof(float));
-    float * offset = calloc(hier.groups, sizeof(float));
+    cl_mem_ext tree_groups_size = opencl_make_int_array(hier.group_size, hier.groups);
+    cl_mem_ext tree_groups_offset = opencl_make_int_array(hier.group_offset, hier.groups);
 
-    cl_mem_ext tree_groups_size = opencl_make_array(size, hier.groups);
-    cl_mem_ext tree_groups_offset = opencl_make_array(offset, hier.groups);
+    opencl_push_int_array(tree_groups_size, hier.group_size, hier.groups);
+    opencl_push_int_array(tree_groups_offset, hier.group_offset, hier.groups);
 
     opencl_kernel(opencl_softmax_tree_kernel[opencl_device_id_t], dimBatch, 18,
         &input.mem, sizeof(cl_mem),
@@ -787,11 +794,8 @@ void softmax_tree_gpu(cl_mem_ext input, int spatial, int batch, int stride, floa
         &tree_groups_offset.mem, sizeof(cl_mem)
     );
 
-    opencl_free(tree_groups_size);
-    opencl_free(tree_groups_offset);
-
-    free(size);
-    free(offset);
+    opencl_free_gpu_only(tree_groups_size);
+    opencl_free_gpu_only(tree_groups_offset);
 }
 
 void scale_mask_gpu(int N, cl_mem_ext X, float mask_num, cl_mem_ext mask, float scale)
@@ -857,10 +861,15 @@ void gemm_offset_gpu(
 {
     //printf("gemm gpu: %d %d %d %d %d %f %d %d %f %d\n",TA, TB, M, N, K, ALPHA, lda, ldb, BETA, ldc);
 
-    dim2 dimGrid;
-    dimGrid = dim2_create(M*N, 1);
+    int tuning = 16;
+    dim2 dimGridG1;
+    dimGridG1 = dim2_create(tuning, M*N);
+    dim2 dimGridL1;
+    dimGridL1 = dim2_create(tuning, 1);
 
-    opencl_kernel(opencl_gemm_kernel[opencl_device_id_t], dimGrid, 32,
+    opencl_kernel_local(opencl_gemm_kernel[opencl_device_id_t], dimGridG1, dimGridL1, 36,
+                  &tuning, sizeof(cl_int),
+                  NULL, tuning*sizeof(cl_float),
                   &TA, sizeof(cl_int),
                   &TB, sizeof(cl_int),
                   &M, sizeof(cl_int),

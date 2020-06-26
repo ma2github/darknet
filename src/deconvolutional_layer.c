@@ -175,50 +175,30 @@ void resize_deconvolutional_layer(layer *l, int h, int w)
 {
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free(l->delta_gpu);
-        opencl_free(l->output_gpu);
+        opencl_free_gpu_only(l->delta_gpu);
+        opencl_free_gpu_only(l->output_gpu);
         if (l->batch_normalize) {
-            opencl_free(l->x_gpu);
-            opencl_free(l->x_norm_gpu);
+            opencl_free_gpu_only(l->x_gpu);
+            opencl_free_gpu_only(l->x_norm_gpu);
         }
-    }
-    else {
-        free(l->delta);
-        free(l->output);
-        if (l->batch_normalize) {
-            free(l->x);
-            free(l->x_norm);
-        }
-    }
-#else
-    free(l->delta);
-    free(l->output);
-    if (l->batch_normalize) {
-        free(l->x);
-        free(l->x_norm);
     }
 #endif
-
     l->h = h;
     l->w = w;
     l->out_h = (l->h - 1) * l->stride + l->size - 2*l->pad;
     l->out_w = (l->w - 1) * l->stride + l->size - 2*l->pad;
-
     l->outputs = l->out_h * l->out_w * l->out_c;
     l->inputs = l->w * l->h * l->c;
-
-    l->output = calloc(l->batch*l->outputs, sizeof(float));
-    l->delta  = calloc(l->batch*l->outputs, sizeof(float));
+    l->output = realloc(l->output, l->batch*l->outputs*sizeof(float));
+    l->delta  = realloc(l->delta, l->batch*l->outputs*sizeof(float));
     if(l->batch_normalize){
-        l->x = calloc(l->batch*l->outputs, sizeof(float));
-        l->x_norm  = calloc(l->batch*l->outputs, sizeof(float));
+        l->x = realloc(l->x, l->batch*l->outputs*sizeof(float));
+        l->x_norm  = realloc(l->x_norm, l->batch*l->outputs*sizeof(float));
     }
-
 #ifdef GPU
     if (gpu_index >= 0) {
         l->delta_gpu = opencl_make_array(l->delta, l->batch * l->outputs);
         l->output_gpu = opencl_make_array(l->output, l->batch * l->outputs);
-
         if (l->batch_normalize) {
             l->x_gpu = opencl_make_array(l->x, l->batch * l->outputs);
             l->x_norm_gpu = opencl_make_array(l->x_norm, l->batch * l->outputs);

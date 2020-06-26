@@ -275,60 +275,28 @@ void resize_convolutional_layer(convolutional_layer *l, int w, int h)
 {
 #ifdef GPU
 	if (gpu_index >= 0) {
-		if (l->delta_gpu.ptr) opencl_free(l->delta_gpu);
-		if (l->output_gpu.ptr) opencl_free(l->output_gpu);
+		if (l->delta_gpu.ptr) opencl_free_gpu_only(l->delta_gpu);
+		if (l->output_gpu.ptr) opencl_free_gpu_only(l->output_gpu);
 		if (l->batch_normalize) {
-			opencl_free(l->x_gpu);
-			opencl_free(l->x_norm_gpu);
+			opencl_free_gpu_only(l->x_gpu);
+			opencl_free_gpu_only(l->x_norm_gpu);
 		}
 	}
-	else {
-		if (l->delta) free(l->delta);
-		if (l->output) free(l->output);
-		if (l->batch_normalize) {
-			free(l->x);
-			free(l->x_norm);
-		}
-	}
-#else
-	if (l->delta) free(l->delta);
-		if (l->output) free(l->output);
-		if (l->batch_normalize) {
-			free(l->mean);
-			free(l->variance);
-
-			free(l->rolling_mean);
-			free(l->rolling_variance);
-
-			free(l->mean_delta);
-			free(l->variance_delta);
-
-			free(l->scales);
-			free(l->scale_updates);
-
-			free(l->x);
-			free(l->x_norm);
-		}
 #endif
-
 	l->w = w;
 	l->h = h;
 	int out_w = convolutional_out_width(*l);
 	int out_h = convolutional_out_height(*l);
-
 	l->out_w = out_w;
 	l->out_h = out_h;
-
 	l->outputs = l->out_h * l->out_w * l->out_c;
 	l->inputs = l->w * l->h * l->c;
-
-	l->output = calloc(l->batch*l->outputs, sizeof(float));
-	l->delta  = calloc(l->batch*l->outputs, sizeof(float));
+	l->output = realloc(l->output, l->batch*l->outputs*sizeof(float));
+	l->delta  = realloc(l->delta, l->batch*l->outputs*sizeof(float));
 	if(l->batch_normalize){
-		l->x = calloc(l->batch*l->outputs, sizeof(float));
-		l->x_norm  = calloc(l->batch*l->outputs, sizeof(float));
+		l->x = realloc(l->x, l->batch*l->outputs*sizeof(float));
+		l->x_norm  = realloc(l->x_norm, l->batch*l->outputs*sizeof(float));
 	}
-
 #ifdef GPU
 	if (gpu_index >= 0) {
 		l->delta_gpu = opencl_make_array(l->delta, l->batch * l->outputs);

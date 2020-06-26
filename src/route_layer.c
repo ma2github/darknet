@@ -63,21 +63,12 @@ void resize_route_layer(route_layer *l, network *net)
 
 #ifdef GPU
     if (gpu_index >= 0) {
-        opencl_free(l->output_gpu);
-        opencl_free(l->delta_gpu);
+        opencl_free_gpu_only(l->output_gpu);
+        opencl_free_gpu_only(l->delta_gpu);
     }
-    else {
-        free(l->output);
-        free(l->delta);
-    }
-#else
-    free(l->output);
-    free(l->delta);
 #endif
-
-    l->output = calloc(l->outputs * l->batch, sizeof(float));
-    l->delta = calloc(l->outputs * l->batch, sizeof(float));
-
+    l->output = realloc(l->output, l->outputs*l->batch*sizeof(float));
+    l->delta = realloc(l->delta, l->outputs*l->batch*sizeof(float));
 #ifdef GPU
     if (gpu_index >= 0) {
         l->output_gpu = opencl_make_array(l->output, l->outputs * l->batch);

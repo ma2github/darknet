@@ -1,0 +1,43 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index bde790a..5140096 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9,8 +9,8 @@ option(DARKNET_CPU "Enable cpu support" OFF)
+ option(DARKNET_OPENCV "Enable OpenCV support" ON)
+ option(DARKNET_OPENMP "Enable OpenMP support" OFF)
+ option(DARKNET_GPU "Enable OpenCL support" ON)
+-option(DARKNET_GPU_FAST "Enable OpenCL fast kernels support" ON)
+-option(DARKNET_GPU_MULTI "Enable OpenCL Multi-GPU support" OFF)
++option(DARKNET_GPU_FAST "Enable OpenCL fast kernels support" OFF)
++option(DARKNET_GPU_MULTI "Enable OpenCL Multi-GPU support" ON)
+ option(DARKNET_ARM "Enable ARM support" OFF)
+ option(DARKNET_BENCHMARK "Some Benchmark Stats" OFF)
+ option(DARKNET_LOSS_ONLY "Loss Only Stats" OFF)
+diff --git a/Makefile b/Makefile
+index a0877f7..736801d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -13,8 +13,8 @@
+ # https://github.com/doe300/VC4CL/wiki/How-to-get
+ 
+ GPU=1
+-GPU_FAST=1
+-GPU_MULTI=0
++GPU_FAST=0
++GPU_MULTI=1
+ OPENCV=1
+ OPENMP=1
+ # Choose only one (works if GPU=1): NVIDIA or AMD or ARM (for VC4CL or MaliGPU)
+diff --git a/src/opencl.c b/src/opencl.c
+index f2c008e..a564b73 100644
+--- a/src/opencl.c
++++ b/src/opencl.c
+@@ -579,7 +579,7 @@ void opencl_init(int *gpus, int ngpus) {
+     cl_uint num = 32;
+     cl_uint all = 0;
+     cl_device_id devices[num];
+-    clErr = clGetDeviceIDs(clPlatform, CL_DEVICE_TYPE_GPU, num, devices, &all);
++    clErr = clGetDeviceIDs(clPlatform, CL_DEVICE_TYPE_ALL, num, devices, &all);
+ 
+     if (clErr != CL_SUCCESS) {
+         printf("opencl_init: Could not get device IDs.\n");
